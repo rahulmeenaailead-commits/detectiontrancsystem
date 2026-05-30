@@ -4,6 +4,8 @@ python-dotenv
 openai
 pydantic
 slowapi
+requests
+httpx
 
 # dev / test only
 pytest

@@ -11,5 +11,10 @@ node_modules/
 .env
 .env.local
 
+# SQLite (regenerated at runtime; never ship demo data)
+*.db
+*.db-shm
+*.db-wal
+
 # OS
 .DS_Store
