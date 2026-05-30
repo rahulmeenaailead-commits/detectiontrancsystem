@@ -1,0 +1,633 @@
+{
+  "results": [
+    {
+      "id": "tx-sim-1780085997-1",
+      "user_id": "u1",
+      "amount": 8.5,
+      "merchant": "Starbucks",
+      "location": "San Francisco, CA",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $8.50 is within normal range (user avg $8.50)."
+    },
+    {
+      "id": "tx-sim-1780085997-2",
+      "user_id": "u1",
+      "amount": 42.0,
+      "merchant": "Whole Foods",
+      "location": "San Francisco, CA",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $42.00 is within normal range (user avg $25.25)."
+    },
+    {
+      "id": "tx-sim-1780085997-3",
+      "user_id": "u1",
+      "amount": 14.0,
+      "merchant": "Uber",
+      "location": "San Francisco, CA",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $14.00 is within normal range (user avg $21.50)."
+    },
+    {
+      "id": "tx-sim-1780085997-4",
+      "user_id": "u1",
+      "amount": 7.25,
+      "merchant": "Starbucks",
+      "location": "San Francisco, CA",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $7.25 is within normal range (user avg $17.94)."
+    },
+    {
+      "id": "tx-sim-1780085997-5",
+      "user_id": "u1",
+      "amount": 23.5,
+      "merchant": "CVS Pharmacy",
+      "location": "San Francisco, CA",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $23.50 is within normal range (user avg $19.05)."
+    },
+    {
+      "id": "tx-sim-1780085997-6",
+      "user_id": "u2",
+      "amount": 5.75,
+      "merchant": "Starbucks",
+      "location": "Chicago, IL",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $5.75 is within normal range (user avg $5.75)."
+    },
+    {
+      "id": "tx-sim-1780085997-7",
+      "user_id": "u2",
+      "amount": 38.0,
+      "merchant": "Trader Joe's",
+      "location": "Chicago, IL",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $38.00 is within normal range (user avg $21.88)."
+    },
+    {
+      "id": "tx-sim-1780085997-8",
+      "user_id": "u2",
+      "amount": 3.5,
+      "merchant": "Metro Transit",
+      "location": "Chicago, IL",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $3.50 is within normal range (user avg $15.75)."
+    },
+    {
+      "id": "tx-sim-1780085997-9",
+      "user_id": "u2",
+      "amount": 12.0,
+      "merchant": "McDonald's",
+      "location": "Chicago, IL",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $12.00 is within normal range (user avg $14.81)."
+    },
+    {
+      "id": "tx-sim-1780085997-10",
+      "user_id": "u2",
+      "amount": 19.0,
+      "merchant": "Walgreens",
+      "location": "Chicago, IL",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $19.00 is within normal range (user avg $15.65)."
+    },
+    {
+      "id": "tx-sim-1780085997-11",
+      "user_id": "u3",
+      "amount": 6.0,
+      "merchant": "Dunkin Donuts",
+      "location": "Seattle, WA",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $6.00 is within normal range (user avg $6.00)."
+    },
+    {
+      "id": "tx-sim-1780085997-12",
+      "user_id": "u3",
+      "amount": 55.0,
+      "merchant": "Safeway",
+      "location": "Seattle, WA",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $55.00 is within normal range (user avg $30.50)."
+    },
+    {
+      "id": "tx-sim-1780085997-13",
+      "user_id": "u3",
+      "amount": 18.0,
+      "merchant": "Lyft",
+      "location": "Seattle, WA",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $18.00 is within normal range (user avg $26.33)."
+    },
+    {
+      "id": "tx-sim-1780085997-14",
+      "user_id": "u3",
+      "amount": 9.5,
+      "merchant": "Starbucks",
+      "location": "Seattle, WA",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $9.50 is within normal range (user avg $22.12)."
+    },
+    {
+      "id": "tx-sim-1780085997-15",
+      "user_id": "u3",
+      "amount": 28.0,
+      "merchant": "CVS Pharmacy",
+      "location": "Seattle, WA",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $28.00 is within normal range (user avg $23.30)."
+    },
+    {
+      "id": "tx-sim-1780085997-16",
+      "user_id": "u4",
+      "amount": 7.0,
+      "merchant": "Starbucks",
+      "location": "Austin, TX",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $7.00 is within normal range (user avg $7.00)."
+    },
+    {
+      "id": "tx-sim-1780085997-17",
+      "user_id": "u4",
+      "amount": 62.0,
+      "merchant": "Kroger",
+      "location": "Austin, TX",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $62.00 is within normal range (user avg $34.50)."
+    },
+    {
+      "id": "tx-sim-1780085997-18",
+      "user_id": "u4",
+      "amount": 22.0,
+      "merchant": "Uber",
+      "location": "Austin, TX",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $22.00 is within normal range (user avg $30.33)."
+    },
+    {
+      "id": "tx-sim-1780085997-19",
+      "user_id": "u4",
+      "amount": 6.5,
+      "merchant": "Starbucks",
+      "location": "Austin, TX",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $6.50 is within normal range (user avg $24.38)."
+    },
+    {
+      "id": "tx-sim-1780085997-20",
+      "user_id": "u4",
+      "amount": 15.0,
+      "merchant": "Rite Aid",
+      "location": "Austin, TX",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $15.00 is within normal range (user avg $22.50)."
+    },
+    {
+      "id": "tx-sim-1780085997-21",
+      "user_id": "u5",
+      "amount": 8.0,
+      "merchant": "Peet's Coffee",
+      "location": "Boston, MA",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $8.00 is within normal range (user avg $8.00)."
+    },
+    {
+      "id": "tx-sim-1780085997-22",
+      "user_id": "u5",
+      "amount": 47.0,
+      "merchant": "Whole Foods",
+      "location": "Boston, MA",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $47.00 is within normal range (user avg $27.50)."
+    },
+    {
+      "id": "tx-sim-1780085997-23",
+      "user_id": "u5",
+      "amount": 11.0,
+      "merchant": "Uber",
+      "location": "Boston, MA",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $11.00 is within normal range (user avg $22.00)."
+    },
+    {
+      "id": "tx-sim-1780085997-24",
+      "user_id": "u5",
+      "amount": 6.75,
+      "merchant": "Starbucks",
+      "location": "Boston, MA",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $6.75 is within normal range (user avg $18.19)."
+    },
+    {
+      "id": "tx-sim-1780085997-25",
+      "user_id": "u5",
+      "amount": 35.0,
+      "merchant": "Target",
+      "location": "Boston, MA",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $35.00 is within normal range (user avg $21.55)."
+    },
+    {
+      "id": "tx-sim-1780085997-26",
+      "user_id": "u1",
+      "amount": 12.5,
+      "merchant": "Starbucks",
+      "location": "San Francisco, CA",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $12.50 is within normal range (user avg $17.96)."
+    },
+    {
+      "id": "tx-sim-1780085997-27",
+      "user_id": "u2",
+      "amount": 6.25,
+      "merchant": "Starbucks",
+      "location": "Chicago, IL",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $6.25 is within normal range (user avg $14.08)."
+    },
+    {
+      "id": "tx-sim-1780085997-28",
+      "user_id": "u3",
+      "amount": 31.0,
+      "merchant": "Safeway",
+      "location": "Seattle, WA",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $31.00 is within normal range (user avg $24.58)."
+    },
+    {
+      "id": "tx-sim-1780085997-29",
+      "user_id": "u4",
+      "amount": 9.0,
+      "merchant": "Dunkin Donuts",
+      "location": "Austin, TX",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $9.00 is within normal range (user avg $20.25)."
+    },
+    {
+      "id": "tx-sim-1780085997-30",
+      "user_id": "u5",
+      "amount": 14.5,
+      "merchant": "Lyft",
+      "location": "Boston, MA",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $14.50 is within normal range (user avg $20.38)."
+    },
+    {
+      "id": "tx-sim-1780085997-31",
+      "user_id": "u1",
+      "amount": 28.0,
+      "merchant": "Whole Foods",
+      "location": "San Francisco, CA",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $28.00 is within normal range (user avg $19.39)."
+    },
+    {
+      "id": "tx-sim-1780085997-32",
+      "user_id": "u2",
+      "amount": 17.5,
+      "merchant": "Uber",
+      "location": "Chicago, IL",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $17.50 is within normal range (user avg $14.57)."
+    },
+    {
+      "id": "tx-sim-1780085997-33",
+      "user_id": "u3",
+      "amount": 8.25,
+      "merchant": "Starbucks",
+      "location": "Seattle, WA",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $8.25 is within normal range (user avg $22.25)."
+    },
+    {
+      "id": "tx-sim-1780085997-34",
+      "user_id": "u4",
+      "amount": 44.0,
+      "merchant": "Trader Joe's",
+      "location": "Austin, TX",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $44.00 is within normal range (user avg $23.64)."
+    },
+    {
+      "id": "tx-sim-1780085997-35",
+      "user_id": "u5",
+      "amount": 22.0,
+      "merchant": "CVS Pharmacy",
+      "location": "Boston, MA",
+      "intended": "LOW",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $22.00 is within normal range (user avg $20.61)."
+    },
+    {
+      "id": "tx-sim-1780085997-36",
+      "user_id": "u1",
+      "amount": 180.0,
+      "merchant": "Best Buy",
+      "location": "San Francisco, CA",
+      "intended": "MEDIUM",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $180.00 is within normal range (user avg $39.47)."
+    },
+    {
+      "id": "tx-sim-1780085997-37",
+      "user_id": "u2",
+      "amount": 250.0,
+      "merchant": "Apple Store",
+      "location": "Chicago, IL",
+      "intended": "MEDIUM",
+      "got": "MEDIUM",
+      "action_taken": "none",
+      "explanation": "Amount $250.00 is 5.7x the user's recent average ($44.00). Recommend secondary verification."
+    },
+    {
+      "id": "tx-sim-1780085997-38",
+      "user_id": "u3",
+      "amount": 320.0,
+      "merchant": "Delta Airlines",
+      "location": "Seattle, WA",
+      "intended": "MEDIUM",
+      "got": "MEDIUM",
+      "action_taken": "none",
+      "explanation": "Amount $320.00 is 5.4x the user's recent average ($59.47). Recommend secondary verification."
+    },
+    {
+      "id": "tx-sim-1780085997-39",
+      "user_id": "u4",
+      "amount": 195.0,
+      "merchant": "Best Buy",
+      "location": "Austin, TX",
+      "intended": "MEDIUM",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $195.00 is within normal range (user avg $45.06)."
+    },
+    {
+      "id": "tx-sim-1780085997-40",
+      "user_id": "u5",
+      "amount": 275.0,
+      "merchant": "United Airlines",
+      "location": "Boston, MA",
+      "intended": "MEDIUM",
+      "got": "MEDIUM",
+      "action_taken": "none",
+      "explanation": "Amount $275.00 is 5.2x the user's recent average ($52.41). Recommend secondary verification."
+    },
+    {
+      "id": "tx-sim-1780085997-41",
+      "user_id": "u1",
+      "amount": 140.0,
+      "merchant": "Nordstrom",
+      "location": "San Francisco, CA",
+      "intended": "MEDIUM",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $140.00 is within normal range (user avg $50.64)."
+    },
+    {
+      "id": "tx-sim-1780085997-42",
+      "user_id": "u2",
+      "amount": 220.0,
+      "merchant": "REI",
+      "location": "Chicago, IL",
+      "intended": "MEDIUM",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $220.00 is within normal range (user avg $63.56)."
+    },
+    {
+      "id": "tx-sim-1780085997-43",
+      "user_id": "u3",
+      "amount": 380.0,
+      "merchant": "Home Depot",
+      "location": "Seattle, WA",
+      "intended": "MEDIUM",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $380.00 is within normal range (user avg $95.08)."
+    },
+    {
+      "id": "tx-sim-1780085997-44",
+      "user_id": "u4",
+      "amount": 160.0,
+      "merchant": "Costco",
+      "location": "Austin, TX",
+      "intended": "MEDIUM",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $160.00 is within normal range (user avg $57.83)."
+    },
+    {
+      "id": "tx-sim-1780085997-45",
+      "user_id": "u5",
+      "amount": 310.0,
+      "merchant": "Samsung Store",
+      "location": "Boston, MA",
+      "intended": "MEDIUM",
+      "got": "LOW",
+      "action_taken": "none",
+      "explanation": "Amount $310.00 is within normal range (user avg $81.03)."
+    },
+    {
+      "id": "tx-sim-1780085997-46",
+      "user_id": "u1",
+      "amount": 7500.0,
+      "merchant": "Unknown Wire Transfer",
+      "location": "Lagos, Nigeria",
+      "intended": "HIGH",
+      "got": "HIGH",
+      "action_taken": "account_frozen",
+      "explanation": "Transaction of $7500.00 at Unknown Wire Transfer (Lagos, Nigeria) is 9.4x this user's recent average of $795.58. Recommend immediate account freeze."
+    },
+    {
+      "id": "tx-sim-1780085997-47",
+      "user_id": "u2",
+      "amount": 12000.0,
+      "merchant": "Crypto Exchange XYZ",
+      "location": "Pyongyang, North Korea",
+      "intended": "HIGH",
+      "got": "HIGH",
+      "action_taken": "account_frozen",
+      "explanation": "Transaction of $12000.00 at Crypto Exchange XYZ (Pyongyang, North Korea) is 9.5x this user's recent average of $1257.20. Recommend immediate account freeze."
+    },
+    {
+      "id": "tx-sim-1780085997-48",
+      "user_id": "u3",
+      "amount": 8900.0,
+      "merchant": "Offshore Wire Transfer",
+      "location": "Accra, Ghana",
+      "intended": "HIGH",
+      "got": "HIGH",
+      "action_taken": "account_frozen",
+      "explanation": "Transaction of $8900.00 at Offshore Wire Transfer (Accra, Ghana) is 9.1x this user's recent average of $975.58. Recommend immediate account freeze. Velocity anomaly: 10 transactions in the last 5 minutes for user u3 (threshold 5). Pattern consistent with card testing."
+    },
+    {
+      "id": "tx-sim-1780085997-49",
+      "user_id": "u4",
+      "amount": 6500.0,
+      "merchant": "Bitcoin ATM",
+      "location": "Moscow, Russia",
+      "intended": "HIGH",
+      "got": "HIGH",
+      "action_taken": "account_frozen",
+      "explanation": "Transaction of $6500.00 at Bitcoin ATM (Moscow, Russia) is 9.3x this user's recent average of $702.05. Recommend immediate account freeze."
+    },
+    {
+      "id": "tx-sim-1780085997-50",
+      "user_id": "u5",
+      "amount": 15000.0,
+      "merchant": "Luxury Goods International",
+      "location": "Dubai, UAE",
+      "intended": "HIGH",
+      "got": "HIGH",
+      "action_taken": "account_frozen",
+      "explanation": "Transaction of $15000.00 at Luxury Goods International (Dubai, UAE) is 9.5x this user's recent average of $1572.92. Recommend immediate account freeze."
+    }
+  ],
+  "surprises": [
+    {
+      "id": "tx-sim-1780085997-36",
+      "user_id": "u1",
+      "amount": 180.0,
+      "merchant": "Best Buy",
+      "intended": "MEDIUM",
+      "got": "LOW",
+      "explanation": "Amount $180.00 is within normal range (user avg $39.47)."
+    },
+    {
+      "id": "tx-sim-1780085997-39",
+      "user_id": "u4",
+      "amount": 195.0,
+      "merchant": "Best Buy",
+      "intended": "MEDIUM",
+      "got": "LOW",
+      "explanation": "Amount $195.00 is within normal range (user avg $45.06)."
+    },
+    {
+      "id": "tx-sim-1780085997-41",
+      "user_id": "u1",
+      "amount": 140.0,
+      "merchant": "Nordstrom",
+      "intended": "MEDIUM",
+      "got": "LOW",
+      "explanation": "Amount $140.00 is within normal range (user avg $50.64)."
+    },
+    {
+      "id": "tx-sim-1780085997-42",
+      "user_id": "u2",
+      "amount": 220.0,
+      "merchant": "REI",
+      "intended": "MEDIUM",
+      "got": "LOW",
+      "explanation": "Amount $220.00 is within normal range (user avg $63.56)."
+    },
+    {
+      "id": "tx-sim-1780085997-43",
+      "user_id": "u3",
+      "amount": 380.0,
+      "merchant": "Home Depot",
+      "intended": "MEDIUM",
+      "got": "LOW",
+      "explanation": "Amount $380.00 is within normal range (user avg $95.08)."
+    },
+    {
+      "id": "tx-sim-1780085997-44",
+      "user_id": "u4",
+      "amount": 160.0,
+      "merchant": "Costco",
+      "intended": "MEDIUM",
+      "got": "LOW",
+      "explanation": "Amount $160.00 is within normal range (user avg $57.83)."
+    },
+    {
+      "id": "tx-sim-1780085997-45",
+      "user_id": "u5",
+      "amount": 310.0,
+      "merchant": "Samsung Store",
+      "intended": "MEDIUM",
+      "got": "LOW",
+      "explanation": "Amount $310.00 is within normal range (user avg $81.03)."
+    }
+  ],
+  "counts": {
+    "LOW": 42,
+    "MEDIUM": 3,
+    "HIGH": 5,
+    "UNKNOWN": 0
+  },
+  "intended_counts": {
+    "low": 35,
+    "medium": 10,
+    "high": 5
+  },
+  "frozen_users": [],
+  "total": 50,
+  "n_sent": 50
+}

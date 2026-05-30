@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  :root{
+    --bg:#0B1220; --panel:#0F1A2C; --panel2:#111F36; --border:#22304A;
+    --teal:#2DD4BF; --tealdim:#14B8A6; --text:#E8EFF8; --muted:#8DA0BC;
+    --red:#F43F5E; --green:#22C55E; --amber:#F59E0B;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --mono:"SF Mono",ui-monospace,Menlo,monospace;
+  }
+  html,body{ width:1600px; height:900px; }
+  body{
+    font-family:var(--sans); color:var(--text); position:relative; overflow:hidden;
+    background:
+      radial-gradient(900px 600px at 12% 6%, rgba(45,212,191,.16), transparent 60%),
+      radial-gradient(700px 520px at 92% 96%, rgba(59,130,246,.10), transparent 60%),
+      linear-gradient(135deg,#0A0F1C 0%,#0C1626 55%,#0A1018 100%);
+  }
+  .grid{ position:absolute; inset:0;
+    background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
+    background-size:48px 48px; mask:radial-gradient(1200px 800px at 30% 30%,#000 30%,transparent 85%);
+  }
+  .wrap{ position:relative; height:100%; padding:64px 72px; display:flex; flex-direction:column; }
+  .top{ display:flex; justify-content:space-between; align-items:center; }
+  .pill{ font-family:var(--mono); font-size:14px; letter-spacing:.12em; color:var(--muted);
+    border:1px solid var(--border); padding:9px 16px; border-radius:999px; background:rgba(255,255,255,.02); }
+  .pill b{ color:var(--teal); font-weight:600; }
+  .track{ font-family:var(--mono); font-size:13px; letter-spacing:.16em; color:#0A0F1C;
+    background:linear-gradient(90deg,var(--teal),#5EEAD4); padding:8px 16px; border-radius:999px; font-weight:700; }
+  .main{ flex:1; display:flex; align-items:center; gap:56px; }
+  .left{ width:58%; }
+  .brand{ display:flex; align-items:center; gap:22px; margin-bottom:10px; }
+  .mark{ width:104px; height:104px; flex:0 0 auto; }
+  .word{ font-size:104px; font-weight:800; letter-spacing:-.02em; line-height:1;
+    background:linear-gradient(180deg,#FFFFFF,#BFE9E2); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .tag{ font-size:27px; font-weight:600; color:var(--teal); margin:18px 0 16px; }
+  .tag span{ color:var(--muted); font-weight:500; }
+  .oneliner{ font-size:20px; line-height:1.5; color:#C4D2E6; max-width:680px; }
+  .oneliner b{ color:#fff; font-weight:600; }
+  .chips{ display:flex; flex-wrap:wrap; gap:10px; margin-top:30px; }
+  .chip{ font-family:var(--mono); font-size:14px; color:#BFD0E6; border:1px solid var(--border);
+    background:rgba(255,255,255,.025); padding:8px 14px; border-radius:8px; }
+  .chip.bd{ border-color:rgba(45,212,191,.5); color:var(--teal); background:rgba(45,212,191,.08); }
+  /* dashboard card */
+  .right{ width:42%; }
+  .card{ background:linear-gradient(180deg,#111F36,#0D1729); border:1px solid var(--border);
+    border-radius:18px; padding:20px; box-shadow:0 30px 70px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.04); }
+  .ch{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .ch .t{ font-size:15px; font-weight:700; color:#DCE7F5; }
+  .live{ font-family:var(--mono); font-size:12px; color:var(--green); display:flex; align-items:center; gap:7px; }
+  .dot{ width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 10px var(--green); }
+  .stats{ display:flex; gap:10px; margin-bottom:14px; }
+  .stat{ flex:1; background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:10px; padding:10px 12px; }
+  .stat .n{ font-size:22px; font-weight:800; } .stat .l{ font-size:11px; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; }
+  .stat.r .n{ color:var(--red);} .stat.f .n{ color:var(--amber);} .stat.a .n{ color:var(--teal);}
+  .row{ display:flex; align-items:center; gap:10px; padding:11px 12px; border-radius:10px; margin-top:8px;
+    font-size:13.5px; border:1px solid transparent; }
+  .row.ok{ background:rgba(34,197,94,.06); border-color:rgba(34,197,94,.18); }
+  .row.bad{ background:rgba(244,63,94,.09); border-color:rgba(244,63,94,.30); }
+  .amt{ font-family:var(--mono); width:78px; font-weight:600; }
+  .mrc{ flex:1; color:#C9D6E8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .mrc small{ display:block; color:var(--muted); font-size:11px; }
+  .badge{ font-family:var(--mono); font-size:11px; font-weight:700; padding:4px 9px; border-radius:6px; letter-spacing:.05em; }
+  .b-low{ color:var(--green); background:rgba(34,197,94,.14); border:1px solid rgba(34,197,94,.4); }
+  .b-high{ color:#fff; background:rgba(244,63,94,.85); border:1px solid var(--red); }
+  .web{ font-family:var(--mono); font-size:12px; display:flex; align-items:center; gap:6px; width:46px; justify-content:flex-end; }
+  .web .d{ width:9px; height:9px; border-radius:50%; }
+  .frozen{ font-family:var(--mono); font-size:11px; color:var(--amber); margin-top:9px; display:flex; align-items:center; gap:7px; }
+  .footer{ display:flex; justify-content:space-between; align-items:center; padding-top:22px; border-top:1px solid var(--border); }
+  .footer .l{ font-size:15px; color:var(--muted); }
+  .footer .l b{ color:#D7E2F1; font-weight:600; }
+  .footer .r{ font-family:var(--mono); font-size:13px; color:var(--teal); }
+</style>
+</head>
+<body>
+  <div class="grid"></div>
+  <div class="wrap">
+    <div class="top">
+      <div class="pill">WEB DATA <b>UNLOCKED</b> HACKATHON &nbsp;·&nbsp; BRIGHT DATA × LABLAB.AI</div>
+      <div class="track">SECURITY &amp; COMPLIANCE</div>
+    </div>
+
+    <div class="main">
+      <div class="left">
+        <div class="brand">
+          <svg class="mark" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#5EEAD4"/><stop offset="1" stop-color="#0EA5A0"/>
+              </linearGradient>
+            </defs>
+            <path d="M50 5 L88 20 V48 C88 72 72 88 50 95 C28 88 12 72 12 48 V20 Z"
+                  fill="rgba(45,212,191,.10)" stroke="url(#g)" stroke-width="3.5"/>
+            <circle cx="50" cy="50" r="22" stroke="url(#g)" stroke-width="3" fill="none" opacity=".55"/>
+            <circle cx="50" cy="50" r="11" stroke="url(#g)" stroke-width="3" fill="none"/>
+            <path d="M50 50 L72 32" stroke="#5EEAD4" stroke-width="4" stroke-linecap="round"/>
+            <circle cx="50" cy="50" r="3.5" fill="#5EEAD4"/>
+          </svg>
+          <div class="word">SENTINEL</div>
+        </div>
+        <div class="tag">Fraud detection that doesn't guess. <span>It reads the web.</span></div>
+        <div class="oneliner">An <b>autonomous AI agent</b> that scores every transaction, reads the same public web a human investigator would — via the <b>Bright Data SERP API</b> — explains its verdict in plain English, and <b>freezes accounts</b> the instant risk goes HIGH.</div>
+        <div class="chips">
+          <div class="chip">AI Agent</div>
+          <div class="chip bd">Bright Data SERP API</div>
+          <div class="chip">FastAPI</div>
+          <div class="chip">Next.js</div>
+          <div class="chip">DeepSeek LLM</div>
+          <div class="chip">Real-Time</div>
+        </div>
+      </div>
+
+      <div class="right">
+        <div class="card">
+          <div class="ch"><div class="t">Sentinel — Live Transactions</div><div class="live"><span class="dot"></span>LIVE</div></div>
+          <div class="stats">
+            <div class="stat a"><div class="n">128</div><div class="l">Analyzed</div></div>
+            <div class="stat r"><div class="n">3</div><div class="l">High risk</div></div>
+            <div class="stat f"><div class="n">3</div><div class="l">Frozen</div></div>
+          </div>
+          <div class="row ok">
+            <div class="amt">$42.00</div>
+            <div class="mrc">Blue Bottle Coffee<small>New York, NY</small></div>
+            <div class="badge b-low">LOW</div>
+            <div class="web"><span class="d" style="background:var(--green);box-shadow:0 0 8px var(--green)"></span>92</div>
+          </div>
+          <div class="row ok">
+            <div class="amt">$48.00</div>
+            <div class="mrc">Blue Bottle Coffee<small>New York, NY · cached ·c</small></div>
+            <div class="badge b-low">LOW</div>
+            <div class="web"><span class="d" style="background:var(--green)"></span>92</div>
+          </div>
+          <div class="row bad">
+            <div class="amt">$9,000</div>
+            <div class="mrc">Unknown Wire Transfer<small>Lagos, Nigeria</small></div>
+            <div class="badge b-high">HIGH</div>
+            <div class="web"><span class="d" style="background:var(--red);box-shadow:0 0 8px var(--red)"></span>12</div>
+          </div>
+          <div class="frozen">⛔ ACCOUNT FROZEN — autonomous action · further transactions rejected (423)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="l"><b>Autonomous real-time fraud detection</b> &nbsp;·&nbsp; live web reputation + LLM reasoning + autonomous freeze</div>
+      <div class="r">github.com/&lt;you&gt;/sentinel</div>
+    </div>
+  </div>
+</body>
+</html>

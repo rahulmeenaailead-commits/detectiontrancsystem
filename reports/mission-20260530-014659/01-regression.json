@@ -1,0 +1,61 @@
+{
+  "phase": 1,
+  "agent": "regression-validator",
+  "started_at": "2026-05-30T01:46:59+00:00",
+  "finished_at": "2026-05-30T01:50:00+00:00",
+  "mode": "heuristic",
+  "summary": "API contract: 18/18 checks passed with zero failures. Regression fixture: 5/8 passed, 3 failed. The 3 failures are caused by two distinct behavioral issues in the heuristic engine, not contract violations: (1) fixture transactions share a timestamp, triggering the velocity-anomaly check (5 txns/5min) on reg-5/reg-6/reg-7, elevating them to HIGH unexpectedly; (2) the rolling average grows with each fixture transaction because prior fixture submissions are included in get_user_average(), causing reg-2 (ratio 4.80, not 5.0) to score LOW instead of MEDIUM, and reg-4 (ratio 14.81, not 30.0) to score MEDIUM instead of HIGH. The account_frozen column in the DB shows False for all HIGH rows because unfreeze was called after each HIGH to allow subsequent fixture tests — this is correct API behavior, not a bug.",
+  "findings": {
+    "contract": {
+      "passed": 18,
+      "failed": 0,
+      "failures": []
+    },
+    "regression": {
+      "passed": 5,
+      "failed": 3,
+      "drift": [
+        {
+          "num": "reg-2",
+          "amount": 100,
+          "merchant": "Whole Foods",
+          "user_id": "reg-u1",
+          "expected": "MEDIUM",
+          "got": "LOW",
+          "verdict": "FAIL",
+          "root_cause": "Rolling average at time of evaluation was $20.83 (not $20.00) because reg-1 ($25) had already been submitted and included in the average. Ratio = 100/20.83 = 4.80, which is below the MEDIUM threshold of >= 5.",
+          "fraud_score_got": 0.0,
+          "action_taken_got": "none",
+          "account_frozen_got": false
+        },
+        {
+          "num": "reg-4",
+          "amount": 600,
+          "merchant": "Best Buy",
+          "user_id": "reg-u1",
+          "expected": "HIGH",
+          "got": "MEDIUM",
+          "verdict": "FAIL",
+          "root_cause": "Rolling average was $40.50 (diluted by reg-2 $100 and reg-3 $99 being included in the average). Ratio = 600/40.50 = 14.81, which is below the HIGH threshold of >= 30. The fixture assumed the baseline would remain $20.",
+          "fraud_score_got": 0.5,
+          "action_taken_got": "none",
+          "account_frozen_got": false
+        },
+        {
+          "num": "reg-5",
+          "amount": 599,
+          "merchant": "Best Buy",
+          "user_id": "reg-u1",
+          "expected": "MEDIUM",
+          "got": "HIGH",
+          "verdict": "FAIL",
+          "root_cause": "Velocity check triggered: reg-1 through reg-5 all share the same timestamp (2026-05-30T10:00:00+00:00), placing 5 transactions within the 5-minute velocity window (threshold = 5). _check_velocity returned HIGH, which _max_risk elevated to the final result regardless of the amount-based classification.",
+          "fraud_score_got": 1.0,
+          "action_taken_got": "account_frozen",
+          "account_frozen_got": true
+        }
+      ]
+    }
+  },
+  "brief_for_next": "Mode: heuristic (DEEPSEEK_API_KEY is unset/empty). API contract is fully clean — 18/18 checks passed on GET /, GET /transactions, POST /analyze (including 422 validation for missing id/amount/empty body). Authentication requires header X-API-Key: sentinel-dev-key. Accounts frozen by HIGH-risk transactions can be unfrozen via POST /unfreeze/{user_id}. Critical behavioral notes for the fraud-simulator: (1) all fixture transactions share the same user's rolling average pool — each submitted transaction immediately inflates the average for subsequent ones, so rapid sequential submissions will shift ratio thresholds; (2) the velocity check fires at 5 transactions within 5 minutes for the same user — if you submit 5+ transactions for the same user in quick succession (even with the same timestamp), it will auto-elevate to HIGH and freeze the account; (3) once an account is frozen, POST /analyze returns 423 and the transaction is rejected — you must POST /unfreeze/{user_id} before submitting more; (4) the hard amount threshold is $5000 (>= 5000 → HIGH), MEDIUM threshold is ratio >= 5, HIGH ratio threshold is >= 30. Use distinct user IDs (e.g. sim-u1, sim-u2, ...) to avoid cross-contaminating averages between test scenarios."
+}

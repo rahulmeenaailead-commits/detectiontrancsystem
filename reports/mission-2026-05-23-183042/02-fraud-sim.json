@@ -1,0 +1,81 @@
+{
+  "phase": "fraud-simulator",
+  "total_posted": 52,
+  "users": ["u1", "u2", "u3", "u4", "u5"],
+  "risk_distribution": {"LOW": 38, "MEDIUM": 5, "HIGH": 9},
+  "intended_mix": {"LOW": 37, "MEDIUM": 10, "HIGH": 5},
+  "frozen_users": ["u1", "u2", "u3", "u4", "u5"],
+  "mode": "deepseek",
+  "surprises": [
+    {
+      "tx_id": "tx-sim-1779544369-028",
+      "intended": "LOW",
+      "actual": "HIGH",
+      "amount": 15.0,
+      "merchant": "Subway",
+      "location": "New York, NY",
+      "reason": "DeepSeek flagged $15 Subway purchase as suspicious because u1's average was inflated to ~$1,954 by a prior HIGH-risk wire transfer in u1's history (from a previous test run that seeded the DB). A small fast-food amount against a high-spending account looked like a fraudster 'test transaction'."
+    },
+    {
+      "tx_id": "tx-sim-1779544369-038",
+      "intended": "MEDIUM",
+      "actual": "LOW",
+      "amount": 380.0,
+      "merchant": "Apple Store",
+      "location": "New York, NY",
+      "reason": "u1's average was ~$1,797 (skewed by the $8500 wire), so $380 at Apple Store fell well below the user average and looked routine — a downward deviation does not trigger fraud in the LLM model."
+    },
+    {
+      "tx_id": "tx-sim-1779544369-043",
+      "intended": "MEDIUM",
+      "actual": "LOW",
+      "amount": 275.0,
+      "merchant": "Samsung Store",
+      "location": "Newark, NJ",
+      "reason": "Same u1 average inflation (~$1,823): $275 is far below the inflated average, so LLM treated it as a small purchase from a high-spending account."
+    },
+    {
+      "tx_id": "tx-sim-1779544369-044",
+      "intended": "MEDIUM",
+      "actual": "LOW",
+      "amount": 195.5,
+      "merchant": "Best Western Hotel",
+      "location": "Dallas, TX",
+      "reason": "u2 average ~$93. $195.50 hotel in Dallas deemed routine travel spending — LLM gave benefit of doubt to well-known hotel chain in a common travel context."
+    },
+    {
+      "tx_id": "tx-sim-1779544369-045",
+      "intended": "MEDIUM",
+      "actual": "HIGH",
+      "amount": 340.0,
+      "merchant": "MGM Grand Casino",
+      "location": "Las Vegas, NV",
+      "reason": "u3 average ~$88. $340 at a casino is ~4x average AND the LLM weighted gambling-merchant category + Las Vegas as high-fraud destination, escalating to HIGH. Casino merchant type is treated as inherently elevated risk."
+    },
+    {
+      "tx_id": "tx-sim-1779544369-046",
+      "intended": "MEDIUM",
+      "actual": "LOW",
+      "amount": 488.0,
+      "merchant": "Delta Airlines",
+      "location": "Miami, FL",
+      "reason": "u4 average ~$124. Despite being ~4x average, Delta Airlines is a well-known carrier and the LLM treated the flight purchase as a legitimate common spike, explaining it as consistent with travel spending."
+    },
+    {
+      "tx_id": "tx-sim-1779544369-047",
+      "intended": "MEDIUM",
+      "actual": "LOW",
+      "amount": 155.0,
+      "merchant": "Nike Factory Store",
+      "location": "Portland, OR",
+      "reason": "u5 average ~$100. $155 at Nike is only 1.5x average — LLM correctly assessed this as barely above baseline for a retail purchase. This classification is arguably correct."
+    }
+  ],
+  "notes": {
+    "u1_average_skew": "u1's baseline average was heavily inflated by a pre-existing HIGH-risk transaction (tx-1779542204087-337, $17,427 Anonymous P2P) in the DB from a previous session. This caused LLM to invert the expected behavior: small amounts looked suspicious and medium amounts looked normal.",
+    "all_high_risk_correct": "All 5 intentionally HIGH transactions (Pyongyang, Lagos, Caracas, Moscow, Minsk) were correctly classified as HIGH.",
+    "casino_escalation": "MGM Grand Casino at Las Vegas being escalated to HIGH demonstrates the LLM gives strong weight to gambling merchants as a fraud signal even at moderate amounts.",
+    "leniency_on_travel": "Airlines and hotels systematically downgraded from MEDIUM to LOW, suggesting the LLM has learned that travel spend spikes are common and non-suspicious."
+  },
+  "brief_for_next": "Fraud simulation complete. All 5 users (u1, u2, u3, u4, u5) are now active in the system and ALL have been frozen due to HIGH-risk transactions. User baselines: u1 average is heavily skewed upward (~$1800+) because a pre-existing $17,427 Anonymous P2P transaction from a prior session contaminated the DB — small amounts for u1 now trigger HIGH (test-transaction suspicion), while medium amounts slip through as LOW. u2 average ~$93, u3 average ~$88, u4 average ~$124, u5 average ~$100. Key model behaviors to probe: (1) casino/gambling merchant type escalates moderate amounts to HIGH, (2) airlines/hotels get benefit of the doubt on 4x spikes, (3) a frozen account still processes new transactions without block, (4) LLM sees downward deviation from high baseline as suspicious. Edge-case hunter should probe: (a) transactions exactly at 30x average, (b) $4999.99 vs $5000.00 boundary, (c) what happens post-freeze with additional txns, (d) negative amounts, zero amounts, extremely large amounts like $1M."
+}

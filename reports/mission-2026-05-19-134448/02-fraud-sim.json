@@ -1,0 +1,66 @@
+{
+  "phase": 2,
+  "agent": "fraud-simulator",
+  "started_at": "2026-05-19T13:55:00Z",
+  "finished_at": "2026-05-19T13:57:30Z",
+  "mode": "deepseek",
+  "summary": "Sent 50 transactions across 5 synthetic users (sim-u01..sim-u05). Intended mix: 35 LOW (25 baselines + 10 recurring), 10 MEDIUM ($175-$510 travel/electronics), 5 HIGH (>=5500 crypto/wire transfers to Lagos, Pyongyang, Moscow, Panama, anonymous proxy). Classified: LOW=43, MEDIUM=2, HIGH=5. All 5 HIGH-risk transactions correctly detected and all 5 user accounts frozen. MEDIUM downgrade surprise: 8 of 10 intended-MEDIUM transactions were classified LOW because per-user averages were inflated by the dirty DB state (pre-existing transactions pushed averages to $60-$103), making 3-8x multiples fall within 'normal range' per LLM explanations. Only 2 MEDIUM transactions (Best Buy $320 for sim-u01 at $102 avg, United Airlines $510 for sim-u03) were correctly classified as MEDIUM. LLM explanations were templated/formulaic ('Amount $X is within normal range (user avg $Y). No action required.') suggesting the heuristic path was dominant even in DeepSeek mode for borderline cases.",
+  "findings": {
+    "sent": 50,
+    "intended_mix": { "low": 35, "medium": 10, "high": 5 },
+    "classified": { "low": 43, "medium": 2, "high": 5 },
+    "frozen_users": ["sim-u01", "sim-u02", "sim-u03", "sim-u04", "sim-u05"],
+    "user_ids": ["sim-u01", "sim-u02", "sim-u03", "sim-u04", "sim-u05"],
+    "surprises": [
+      {
+        "id": "tx-sim-1779178682-37",
+        "intended": "MEDIUM",
+        "got": "LOW",
+        "explanation": "Amount $450.00 is within normal range (user avg $102.78). No action required."
+      },
+      {
+        "id": "tx-sim-1779178682-38",
+        "intended": "MEDIUM",
+        "got": "LOW",
+        "explanation": "Amount $280.00 is within normal range (user avg $59.88). No action required."
+      },
+      {
+        "id": "tx-sim-1779178682-39",
+        "intended": "MEDIUM",
+        "got": "LOW",
+        "explanation": "Amount $390.00 is within normal range (user avg $96.56). No action required."
+      },
+      {
+        "id": "tx-sim-1779178682-41",
+        "intended": "MEDIUM",
+        "got": "LOW",
+        "explanation": "Amount $175.00 is within normal range (user avg $96.67). No action required."
+      },
+      {
+        "id": "tx-sim-1779178682-42",
+        "intended": "MEDIUM",
+        "got": "LOW",
+        "explanation": "Amount $230.00 is within normal range (user avg $57.62). No action required."
+      },
+      {
+        "id": "tx-sim-1779178682-43",
+        "intended": "MEDIUM",
+        "got": "LOW",
+        "explanation": "Amount $415.00 is within normal range (user avg $97.33). No action required."
+      },
+      {
+        "id": "tx-sim-1779178682-44",
+        "intended": "MEDIUM",
+        "got": "LOW",
+        "explanation": "Amount $260.00 is within normal range (user avg $63.00). No action required."
+      },
+      {
+        "id": "tx-sim-1779178682-45",
+        "intended": "MEDIUM",
+        "got": "LOW",
+        "explanation": "Amount $340.00 is within normal range (user avg $93.78). No action required."
+      }
+    ]
+  },
+  "brief_for_next": "Edge-case-hunter (phase 3) should know: 5 synthetic users exist — sim-u01..sim-u05 — ALL are frozen (account_frozen=true) due to HIGH-risk transactions. DB now has ~60+ total transactions (11 pre-existing + 3 regression + 50 sim). User averages established: sim-u01~$103, sim-u02~$60-97, sim-u03~$97, sim-u04~$58-97, sim-u05~$63-94 (inflated by pre-existing dirty state). LLM explanations for borderline cases were highly templated ('Amount $X is within normal range (user avg $Y). No action required.') suggesting the heuristic dominates for sub-threshold amounts. MEDIUM boundary is fuzzy: $450 at $103 avg (4.4x) went LOW; only $320 at $102 avg (3.1x) went MEDIUM — inconsistent. HIGH detection was perfect: all 5 flagged correctly (Lagos, Pyongyang, Moscow, Panama, anon proxy >= $5500). Interesting probes for edge-case-hunter: (1) exact $5000 boundary, (2) 29x vs 30x multiplier, (3) transactions on already-frozen accounts, (4) negative/zero amounts, (5) missing optional fields, (6) the inconsistent MEDIUM threshold (~3-5x avg)."
+}

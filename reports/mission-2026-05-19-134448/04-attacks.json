@@ -1,0 +1,144 @@
+{
+  "phase": 4,
+  "agent": "attack-scenario-runner",
+  "started_at": "2026-05-19T09:15:00Z",
+  "finished_at": "2026-05-19T09:25:00Z",
+  "mode": "deepseek",
+  "scenarios": [
+    {
+      "name": "card-testing",
+      "description": "10 small probing transactions ($1-$9) at varied merchants, 30s apart, same user",
+      "user_id": "card-u1",
+      "expected": "MEDIUM/HIGH (velocity pattern)",
+      "got": "LOW (all 10 transactions)",
+      "account_frozen": false,
+      "verdict": "MISS",
+      "fix_sketch": "Needs velocity counter per user_id over rolling 5-minute window; if >= 5 transactions in 5 min -> MEDIUM, >= 8 -> HIGH. Amount floor filter (< $15) should amplify signal.",
+      "attack_txns": [
+        {"id": "card-tx-001", "amount": 6.50, "merchant": "Spotify", "risk_level": "LOW"},
+        {"id": "card-tx-002", "amount": 1.99, "merchant": "Amazon", "risk_level": "LOW"},
+        {"id": "card-tx-003", "amount": 3.50, "merchant": "Shell Gas", "risk_level": "LOW"},
+        {"id": "card-tx-004", "amount": 7.25, "merchant": "McDonald's", "risk_level": "LOW"},
+        {"id": "card-tx-005", "amount": 2.99, "merchant": "7-Eleven", "risk_level": "LOW"},
+        {"id": "card-tx-006", "amount": 5.50, "merchant": "CVS Pharmacy", "risk_level": "LOW"},
+        {"id": "card-tx-007", "amount": 1.00, "merchant": "Uber", "risk_level": "LOW"},
+        {"id": "card-tx-008", "amount": 4.99, "merchant": "iTunes", "risk_level": "LOW"},
+        {"id": "card-tx-009", "amount": 8.75, "merchant": "Walmart", "risk_level": "LOW"},
+        {"id": "card-tx-010", "amount": 3.25, "merchant": "Target", "risk_level": "LOW"}
+      ]
+    },
+    {
+      "name": "account-takeover",
+      "description": "8-txn baseline at $8-$45 local coffee/grocery, then $4500 Luxury Watches Dubai 03:17",
+      "user_id": "ato-u1",
+      "baseline_count": 8,
+      "baseline_avg": 24.09,
+      "expected": "HIGH",
+      "got": "MEDIUM",
+      "account_frozen": false,
+      "verdict": "MISS",
+      "contaminated_ratio_shown": 8.6,
+      "true_ratio": 186.8,
+      "root_cause": "BUG-1 self-contamination: attack tx included in its own avg calc. True avg = $24.09, true ratio = 186.8x (far above 30x threshold). Shown avg = $521.42 (includes $4500 attack), shown ratio = 8.6x -> MEDIUM not HIGH. Additionally, foreign location (Dubai) and unusual hour (03:17) were noted in explanation but not sufficient for HIGH alone.",
+      "explanation": "Amount $4500.00 is 8.6x the user's recent average ($521.42). Recommend secondary verification before settlement.",
+      "fix_sketch": "Fix BUG-1 (compute avg BEFORE INSERT). With true ratio 186.8x, heuristic threshold (>=30x -> HIGH) would fire correctly. Additionally add location-change signal: if current location differs from all prior locations and ratio > 5x -> escalate to HIGH."
+    },
+    {
+      "name": "structuring-smurfing",
+      "description": "6 transactions at $4950-$4999 to stay below $5000 threshold, 10 min apart",
+      "user_id": "smurf-u1",
+      "expected": "HIGH (aggregate sub-threshold structuring)",
+      "got": "LOW (all 6 transactions)",
+      "account_frozen": false,
+      "verdict": "MISS",
+      "root_cause": "No sub-threshold aggregation rule. Each individual transaction is just below $5000 so the amount-threshold rule never fires. Self-contamination collapses each transaction's ratio to ~1.0 since all transactions are similar amounts. Total laundered: $29,869.50 undetected.",
+      "explanation_sample": "Amount $4989.00 is within normal range (user avg $4989.00). No action required.",
+      "fix_sketch": "Needs rolling-window sum: if sum of user's transactions in last 24h exceeds $10,000 (or crosses $5000 in < 6 transactions) -> HIGH. Also: if N >= 3 transactions all in range [$4500, $5000] within 1 hour -> flag as structuring."
+    },
+    {
+      "name": "mule-transfer",
+      "description": "Single $9000 wire transfer to Lagos, Nigeria",
+      "user_id": "mule-u1",
+      "expected": "HIGH + account_frozen",
+      "got": "HIGH",
+      "account_frozen": true,
+      "action_taken": "account_frozen",
+      "verdict": "CATCH",
+      "explanation": "Transaction of $9000.00 at Unknown Wire Transfer (Lagos, Nigeria) is 1.0x this user's recent average of $9000.00. The amount, location, and merchant pattern are strongly inconsistent with the user's baseline behavior. Recommend immediate account freeze pending customer verification.",
+      "note": "Caught despite self-contamination (ratio=1.0 on new user) because amount >= $5000 absolute threshold fired. DeepSeek also correctly flagged the high-risk corridor and merchant."
+    },
+    {
+      "name": "geo-impossible",
+      "description": "Same user: $40 NYC at T, then $40 Tokyo at T+90s (10,000 km gap)",
+      "user_id": "geo-u1",
+      "expected": "HIGH on tx2 (impossible geo-velocity)",
+      "got": "LOW (both transactions)",
+      "account_frozen": false,
+      "verdict": "MISS",
+      "tx1": {"id": "geo-tx-001", "location": "New York, NY", "risk_level": "LOW"},
+      "tx2": {"id": "geo-tx-002", "location": "Tokyo, Japan", "risk_level": "LOW", "explanation": "Amount $40.00 is within normal range (user avg $40.00). No action required."},
+      "root_cause": "No geo-velocity check. Sentinel has no logic to compare current transaction location against prior transaction location/timestamp. The LLM was not given prior transaction context to detect the impossibility.",
+      "fix_sketch": "Fetch last N transaction locations for user_id; compute haversine distance; if distance/time_delta > 900 km/h (faster than any commercial flight) -> HIGH geo-impossible flag. Pass prior location + timestamp to LLM prompt as context."
+    },
+    {
+      "name": "merchant-anomaly",
+      "description": "10-txn baseline at Starbucks/Whole Foods ($6-$25), then $800 Crypto Exchange ZZZ",
+      "user_id": "merch-u1",
+      "baseline_count": 10,
+      "baseline_avg": 12.75,
+      "expected": "HIGH (heuristic: 62x ratio; LLM: merchant category anomaly)",
+      "got": "MEDIUM",
+      "account_frozen": false,
+      "verdict": "PARTIAL-MISS",
+      "contaminated_ratio_shown": 8.8,
+      "true_ratio": 62.7,
+      "root_cause": "BUG-1 self-contamination again. True avg = $12.75, true ratio = 800/12.75 = 62.7x (>30x -> should be HIGH). Shown avg = $91.17 (includes $800), shown ratio = 8.8x -> MEDIUM. DeepSeek correctly noted crypto exchange anomaly but did not escalate to HIGH due to deflated ratio.",
+      "explanation": "Amount $800.00 is 8.8x the user's recent average ($91.17). Recommend secondary verification before settlement.",
+      "fix_sketch": "Fix BUG-1. With true 62.7x ratio, heuristic fires HIGH. Additionally add merchant category embedding comparison: if cosine distance between current merchant category and user's modal category > threshold -> escalate."
+    }
+  ],
+  "detected": 1,
+  "missed": 4,
+  "partial": 1,
+  "total": 6,
+  "coverage_pct": 16.7,
+  "gaps": [
+    {
+      "id": "GAP-1",
+      "scenario": "card-testing",
+      "description": "No transaction velocity detection",
+      "fix": "Add rolling count per user_id over 5-minute window. >= 5 txns -> MEDIUM; >= 8 txns -> HIGH. Weight signal when amounts are all < $15 (probe pattern)."
+    },
+    {
+      "id": "GAP-2",
+      "scenario": "account-takeover + merchant-anomaly",
+      "description": "BUG-1 self-contamination defeats ratio-based detection for attack transactions",
+      "fix": "In main.py, call get_user_average BEFORE the INSERT. This fixes ratio calculation for all scenarios relying on 30x threshold. ATO true ratio 186.8x and merch-anomaly true ratio 62.7x would both fire HIGH correctly."
+    },
+    {
+      "id": "GAP-3",
+      "scenario": "account-takeover",
+      "description": "No location-change escalation signal",
+      "fix": "If current location differs from user's historical locations AND ratio > 5x -> escalate. Pass user's location history to LLM prompt."
+    },
+    {
+      "id": "GAP-4",
+      "scenario": "structuring-smurfing",
+      "description": "No sub-threshold aggregation / structuring detection",
+      "fix": "Rolling 24h sum per user_id. If sum > $10,000 or 3+ transactions in [$4500, $5000] range within 1 hour -> HIGH structuring flag."
+    },
+    {
+      "id": "GAP-5",
+      "scenario": "geo-impossible",
+      "description": "No geo-velocity check across consecutive transactions",
+      "fix": "Fetch last transaction location + timestamp for user_id. Compute haversine distance. If speed implied > 900 km/h -> HIGH impossible-travel flag. Pass prior tx location/timestamp to LLM as context field."
+    },
+    {
+      "id": "GAP-6",
+      "scenario": "merchant-anomaly",
+      "description": "No merchant category baseline / anomaly signal (LLM catches this in description but ratio deflation prevents HIGH)",
+      "fix": "Fix BUG-1 first. Additionally: compute modal merchant category from user history; pass to LLM prompt as 'user_typical_merchants' context."
+    }
+  ],
+  "brief_for_next": "Phase 5 (security-prober) key targets: (1) BUG-1 self-contamination is now confirmed to cause ATO and merchant-anomaly misses in production scenarios — it is exploitable by any new user as a bypass; (2) mule-transfer only caught because amount >= $5000 absolute threshold fired — the LLM noted the Lagos corridor but the ratio-based path was defeated; (3) all 4 misses stem from two root causes: no temporal/spatial context in detection (velocity, geo) and BUG-1 ratio contamination. The security-prober should test SQL injection in id/user_id/merchant/location fields and verify prompt injection resistance in the DeepSeek path."
+}

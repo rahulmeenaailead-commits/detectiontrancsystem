@@ -1,0 +1,64 @@
+{
+  "phase": 1,
+  "agent": "regression-validator",
+  "started_at": "2026-05-19T08:16:14Z",
+  "finished_at": "2026-05-19T08:16:38Z",
+  "mode": "deepseek",
+  "summary": "API contract fully validated: all 6 contract checks pass across GET /, GET /transactions, POST /analyze (well-formed, empty body, missing id, missing amount). The backend is running in DeepSeek LLM mode (real API key present). Three LLM-mode sanity checks confirm correct response shapes, valid risk_level values, correct fraud_score mapping, and accurate account_frozen/action_taken semantics. Direction sanity confirmed: $9000 Lagos wire returned HIGH (not LOW). All 13 HIGH-risk transactions in the DB have account_frozen=true. No contract failures, no model drift detected. DB had 11 pre-existing transactions when the run began (dirty state).",
+  "findings": {
+    "contract": {
+      "passed": 6,
+      "failed": 0,
+      "failures": []
+    },
+    "regression": {
+      "passed": 3,
+      "failed": 0,
+      "drift": []
+    }
+  },
+  "llm_sanity_checks": [
+    {
+      "id": "reg-llm-1",
+      "amount": 25,
+      "merchant": "Starbucks",
+      "location": "New York, NY",
+      "risk_level": "LOW",
+      "fraud_score": 0.0,
+      "account_frozen": false,
+      "action_taken": "none",
+      "shape_ok": true,
+      "drift": null
+    },
+    {
+      "id": "reg-llm-2",
+      "amount": 9000,
+      "merchant": "Unknown Wire Transfer",
+      "location": "Lagos, Nigeria",
+      "risk_level": "HIGH",
+      "fraud_score": 1.0,
+      "account_frozen": true,
+      "action_taken": "account_frozen",
+      "shape_ok": true,
+      "drift": null
+    },
+    {
+      "id": "reg-llm-3",
+      "amount": 5000,
+      "merchant": "Best Buy",
+      "location": "Miami, FL",
+      "risk_level": "HIGH",
+      "fraud_score": 1.0,
+      "account_frozen": true,
+      "action_taken": "account_frozen",
+      "shape_ok": true,
+      "drift": null
+    }
+  ],
+  "db_state": {
+    "pre_existing_transactions": 11,
+    "high_risk_count_after_run": 13,
+    "all_high_frozen": true
+  },
+  "brief_for_next": "Mode is DEEPSEEK (real API key active, sk-4a63... present in backend/.env). Do NOT rely on deterministic heuristic thresholds — the LLM classifies autonomously. Contract is fully healthy: all 6 checks pass, all response shapes are correct, fraud_score mapping is exact (LOW=0.0, MEDIUM=0.5, HIGH=1.0), and autonomous account freeze (action_taken=account_frozen) fires correctly for all HIGH-risk transactions. DB was dirty at run start with 11 pre-existing transactions; use distinct user IDs (e.g. reg-u10+) to avoid baseline contamination from prior simulate_attack.sh runs. $9000 Lagos wire correctly returned HIGH — model direction is sound. The API is stable and ready for fraud-simulation traffic."
+}

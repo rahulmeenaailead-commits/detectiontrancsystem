@@ -1,0 +1,93 @@
+{
+  "phase": 3,
+  "agent": "edge-case-hunter",
+  "started_at": "2026-05-19T09:05:00Z",
+  "finished_at": "2026-05-19T09:14:04Z",
+  "mode": "deepseek",
+  "summary": "Ran 21 edge-case groups (amount boundaries, ratio boundaries, type/field handling, unicode/length, timestamps, state-dependent). Found 1 critical structural bug: the transaction is INSERT-ed into SQLite BEFORE get_user_average is called, so every first-time transaction includes itself in its own baseline average (self-contamination). This collapses the ratio to 1.0 for all new users, silently defeating the ratio-based detection path. Secondary findings: negative amounts accepted with no validation and rated LOW (ratio goes negative, compares as < 5, falls through to LOW); duplicate transaction IDs cause unhandled 500 (no 409 response); 5000-char location field accepted and stored with no truncation; empty and non-date timestamps accepted silently; already-frozen user accounts continue to be re-frozen on subsequent HIGH transactions (no idempotency guard, extra DB writes).",
+  "findings": {
+    "total_cases": 21,
+    "pass": 12,
+    "fail": 4,
+    "surprise": 5,
+    "rows": [
+      {"n": 1,  "case": "amount=0",                      "sent": "{amount:0, new user}",                "status": 200, "got": "LOW (avg=$0->baseline=100, ratio=0)", "verdict": "PASS"},
+      {"n": 2,  "case": "amount=0.01",                   "sent": "{amount:0.01, new user}",             "status": 200, "got": "LOW (avg=$0.01 self-contaminated, ratio=1.0)", "verdict": "SURPRISE"},
+      {"n": 3,  "case": "amount=4999.99",                "sent": "{amount:4999.99, new user}",          "status": 200, "got": "LOW (avg=$4999.99 self-contaminated, ratio=1.0 — amount rule misses by $0.01)", "verdict": "FAIL"},
+      {"n": 4,  "case": "amount=5000.00",                "sent": "{amount:5000.00, new user}",          "status": 200, "got": "HIGH (amount>=5000 rule fires despite self-contaminated avg)", "verdict": "PASS"},
+      {"n": 5,  "case": "amount=-100",                   "sent": "{amount:-100, new user}",             "status": 200, "got": "LOW (avg=-100<0 -> baseline=100, ratio=-1.0 -> LOW)", "verdict": "SURPRISE"},
+      {"n": 6,  "case": "amount=1e15",                   "sent": "{amount:1e15, new user}",             "status": 200, "got": "HIGH (amount>=5000 fires, no overflow)", "verdict": "PASS"},
+      {"n": "7a", "case": "ratio=29.99 new user",        "sent": "{amount:2999, new user}",             "status": 200, "got": "LOW (self-contamination: avg=2999->ratio=1.0, expected MEDIUM)", "verdict": "FAIL"},
+      {"n": "7b", "case": "ratio=30.0 new user",         "sent": "{amount:3000, new user}",             "status": 200, "got": "LOW (self-contamination: avg=3000->ratio=1.0, expected HIGH)", "verdict": "FAIL"},
+      {"n": "8a", "case": "ratio=29.98 established avg", "sent": "{amount:1499, user avg~$50 seeded}",  "status": 200, "got": "MEDIUM (avg=$291.50 — 5 seed txns diluted by self-inclusion, ratio=5.1)", "verdict": "SURPRISE"},
+      {"n": "8b", "case": "ratio=30.0 established avg",  "sent": "{amount:1500, user avg~$50 seeded}",  "status": 200, "got": "MEDIUM (avg=$291.67 self-contaminated, ratio=5.1 — should be HIGH at 30x)", "verdict": "FAIL"},
+      {"n": 9,  "case": "missing merchant",              "sent": "{no merchant field}",                 "status": 422, "got": "422 Field required", "verdict": "PASS"},
+      {"n": 10, "case": "missing user_id",               "sent": "{no user_id field}",                 "status": 422, "got": "422 Field required", "verdict": "PASS"},
+      {"n": 11, "case": "amount as string '500'",        "sent": "{amount:'500'}",                      "status": 200, "got": "LOW (Pydantic coerced to 500.0)", "verdict": "PASS"},
+      {"n": 12, "case": "amount=null",                   "sent": "{amount:null}",                       "status": 422, "got": "422 float_type error", "verdict": "PASS"},
+      {"n": 13, "case": "extra field foo=bar",           "sent": "{...foo:'bar'}",                      "status": 200, "got": "LOW (extra field silently ignored)", "verdict": "PASS"},
+      {"n": 14, "case": "unicode merchant",              "sent": "{merchant:'☕ Café Münich 北京'}",    "status": 200, "got": "LOW (unicode stored and returned correctly)", "verdict": "PASS"},
+      {"n": 15, "case": "5000-char location",            "sent": "{location: 5000×'A'}",                "status": 200, "got": "LOW (full 5000 chars stored, no truncation)", "verdict": "SURPRISE"},
+      {"n": 16, "case": "id with spaces/slash",          "sent": "{id:'ec2 16/test'}",                  "status": 200, "got": "LOW (accepted, stored verbatim)", "verdict": "PASS"},
+      {"n": 17, "case": "future timestamp 2099",         "sent": "{timestamp:'2099-12-31T23:59:59'}",   "status": 200, "got": "LOW (no validation, accepted)", "verdict": "PASS"},
+      {"n": 18, "case": "empty timestamp string",        "sent": "{timestamp:''}",                      "status": 200, "got": "LOW (empty string accepted, stored as '')", "verdict": "SURPRISE"},
+      {"n": 19, "case": "non-date timestamp",            "sent": "{timestamp:'not-a-date'}",            "status": 200, "got": "LOW (garbage accepted, stored verbatim)", "verdict": "PASS"},
+      {"n": 20, "case": "GET /transactions non-empty DB","sent": "GET /transactions",                   "status": 200, "got": "200 array with 126 txns", "verdict": "PASS"},
+      {"n": 21, "case": "HIGH txn on frozen user",       "sent": "{amount:9999, user already frozen}",  "status": 200, "got": "HIGH, action_taken=account_frozen, account_frozen=true (re-freezes redundantly)", "verdict": "SURPRISE"}
+    ],
+    "bugs": [
+      {
+        "id": "BUG-1",
+        "severity": "critical",
+        "title": "Transaction inserted before average lookup — self-contamination of baseline",
+        "cases_affected": [2, 3, "7a", "7b", "8a", "8b"],
+        "root_cause": "main.py:34 INSERTs the transaction into SQLite, then agent.py:74 calls get_user_average which queries the same table — including the just-inserted row. A new user's first transaction always has avg=amount, ratio=1.0, bypassing all ratio-based detection.",
+        "impact": "Ratio-based HIGH/MEDIUM detection is completely defeated for first-time users. Case 7b ($3000 on new user, 30x baseline) returned LOW instead of HIGH. Case 3 ($4999.99 new user) returned LOW instead of MEDIUM/HIGH.",
+        "fix": "Call get_user_average BEFORE the INSERT in main.py, or exclude the current transaction ID from the avg subquery in database.py."
+      },
+      {
+        "id": "BUG-2",
+        "severity": "high",
+        "title": "Duplicate transaction ID causes unhandled 500",
+        "cases_affected": ["observed during re-run with reused IDs"],
+        "root_cause": "The INSERT in main.py has no error handling for the UNIQUE PRIMARY KEY constraint on transactions.id. SQLite raises IntegrityError which propagates as a 500.",
+        "impact": "Any client retrying a request with the same ID (idempotency pattern) gets a 500 instead of 409 or the original result.",
+        "fix": "Wrap the INSERT in try/except IntegrityError and return 409 Conflict, or use INSERT OR IGNORE with a subsequent SELECT."
+      },
+      {
+        "id": "BUG-3",
+        "severity": "medium",
+        "title": "Negative amounts accepted and silently classified LOW",
+        "cases_affected": [5],
+        "root_cause": "Pydantic model has no ge=0 constraint on amount. A negative amount makes ratio negative (avg<0 -> baseline=100, ratio<0), which falls through all thresholds to LOW. The heuristic explanation reads 'Amount $-100.00 is within normal range'.",
+        "impact": "Fraudulent negative-amount transactions (chargebacks, refund fraud) are never flagged. The explanation text is nonsensical.",
+        "fix": "Add ge=0 or gt=0 constraint to the amount field in models.py: amount: float = Field(..., ge=0)"
+      },
+      {
+        "id": "BUG-4",
+        "severity": "low",
+        "title": "No field length limits — 5000-char location stored without truncation",
+        "cases_affected": [15],
+        "root_cause": "No max_length constraints on string fields in models.py. SQLite TEXT has no limit, but large inputs bloat the DB, inflate LLM prompts (cost/latency), and could DoS the DeepSeek API.",
+        "fix": "Add max_length constraints in models.py, e.g. location: str = Field(..., max_length=255)"
+      },
+      {
+        "id": "BUG-5",
+        "severity": "low",
+        "title": "Empty and non-date timestamps accepted silently",
+        "cases_affected": [18, 19],
+        "root_cause": "timestamp is typed as str with no datetime validation. Empty string '' and 'not-a-date' are stored verbatim. The ORDER BY timestamp DESC sort in list_transactions will produce undefined ordering for malformed timestamps.",
+        "fix": "Type timestamp as datetime in models.py, or add a validator. FastAPI/Pydantic v2 will then reject malformed inputs with 422."
+      },
+      {
+        "id": "BUG-6",
+        "severity": "informational",
+        "title": "Already-frozen users are re-frozen on subsequent HIGH transactions",
+        "cases_affected": [21],
+        "root_cause": "freeze_user() in database.py uses INSERT OR IGNORE + UPDATE unconditionally. There is no check in agent.py or main.py for whether an account is already frozen before processing or before calling freeze_user again.",
+        "fix": "Add a pre-analysis check: if user already frozen, still classify but skip the freeze_user call and set action_taken='already_frozen'."
+      }
+    ]
+  },
+  "brief_for_next": "Phase 4 (security-prober) should prioritize: (1) SQL injection via id/user_id/merchant/location fields — no parameterization audit done yet; (2) the self-contamination bug (BUG-1) means any ratio-based fraud rule is completely bypassable by a new user — test whether an attacker can exploit this to launder HIGH-risk transactions; (3) no auth on any endpoint; (4) CORS wildcard. The heuristic explanations seen in DeepSeek mode suggest the LLM may be pattern-matching the heuristic format, making it hard to distinguish LLM vs fallback mode from output alone — the security-prober should verify prompt injection resistance."
+}

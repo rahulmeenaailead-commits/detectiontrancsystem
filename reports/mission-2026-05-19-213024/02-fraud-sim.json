@@ -1,0 +1,54 @@
+{
+  "phase": 2,
+  "agent": "fraud-simulator",
+  "started_at": "2026-05-19T21:30:24Z",
+  "finished_at": "2026-05-19T21:38:10Z",
+  "mode": "deepseek",
+  "summary": "Sent 50 transactions (25 baseline + 50 mixed batch = 75 sim txns total; 85 total in DB including Phase 1 data) across users u1-u5. Intended mix: LOW=35, MEDIUM=10, HIGH=5. Classified: LOW=34, MEDIUM=10, HIGH=6. All 5 HIGH-intended transactions were correctly classified HIGH and triggered account freezes for all 5 users. Four surprises: two LOW-intended came back MEDIUM (u2: $55 Target and $80 Best Buy Accessories — LLM flagged ~2-2.3x avg deviation as MEDIUM); one MEDIUM-intended came back HIGH (u4: $390 United Airlines — LLM classified HIGH because ratio was >6x avg of $60 after u4's early freeze inflated caution); one MEDIUM-intended came back LOW (u4: $480 Southwest Airlines — LLM rationalized as legitimate travel even at 6.6x avg). Explanations are clearly LLM-generated (natural language, context-specific reasoning with merchant names and exact ratio calculations), not templated heuristic strings. Consistent with Phase 1 finding of LLM under-classification for $4999-$5000, but in this run all five >=$6000 HIGH targets were caught correctly.",
+  "findings": {
+    "sent": 50,
+    "intended_mix": { "low": 35, "medium": 10, "high": 5 },
+    "classified": { "low": 34, "medium": 10, "high": 6 },
+    "frozen_users": ["u1", "u2", "u3", "u4", "u5"],
+    "user_ids": ["u1", "u2", "u3", "u4", "u5"],
+    "surprises": [
+      {
+        "id": "tx-sim-1779206694-307",
+        "intended": "LOW",
+        "got": "MEDIUM",
+        "user_id": "u2",
+        "amount": 55,
+        "merchant": "Target",
+        "explanation": "This transaction of $55.00 at a Target in Chicago is more than double the account's typical average of $21.67, which is flagged as a moderate anomaly warranting MEDIUM risk despite being a routine retail merchant."
+      },
+      {
+        "id": "tx-sim-1779206694-332",
+        "intended": "LOW",
+        "got": "MEDIUM",
+        "user_id": "u2",
+        "amount": 80,
+        "merchant": "Best Buy Accessories",
+        "explanation": "The transaction amount of $80.00 is about 2.3 times higher than the user's average of $34.40, which suggests a possible anomaly and warrants MEDIUM risk classification."
+      },
+      {
+        "id": "tx-sim-1779206694-339",
+        "intended": "MEDIUM",
+        "got": "HIGH",
+        "user_id": "u4",
+        "amount": 390,
+        "merchant": "United Airlines",
+        "explanation": "This transaction is flagged as high risk because the amount of $390.00 is over six times the user's average transaction amount of ~$60, triggering HIGH despite being a domestic airline purchase."
+      },
+      {
+        "id": "tx-sim-1779206694-344",
+        "intended": "MEDIUM",
+        "got": "LOW",
+        "user_id": "u4",
+        "amount": 480,
+        "merchant": "Southwest Airlines",
+        "explanation": "While the $480 transaction is significantly higher than the user's average of $72.30, the merchant is Southwest Airlines — a common domestic carrier — so the LLM rationalized it as legitimate travel and returned LOW."
+      }
+    ]
+  },
+  "brief_for_next": "Database now contains 85 transactions total (Phase 1 left ~10 seed/regression txns for reg-u1, reg-u2, reg-contract, reg-contract-high; Phase 2 added 25 baselines + 50 mixed batch). Users u1-u5 are all ACTIVE with account_frozen=True after HIGH-risk transactions triggered freezes. Baseline averages established: u1~$22/txn (Starbucks/coffee), u2~$21-$60/txn (grocery/pharmacy), u3~$22/txn, u4~$19-$72/txn (transit/grocery), u5~$24/txn. All 5 users processed transactions after being frozen (Southwest Airlines tx-sim-1779206694-344 came back LOW for u4 even while frozen). Edge-case-hunter should avoid tx IDs tx-sim-1779206694-301 through tx-sim-1779206694-350 and all reg-* prefixed IDs. Notable LLM behavior: merchant reputation heavily influences classification — Southwest Airlines $480 rated LOW while United Airlines $390 rated HIGH (ratio-based inconsistency). LLM correctly catches >$6000 HIGH-risk wire/crypto txns. Boundary zone $300-$600 at legitimate merchants shows inconsistent MEDIUM vs HIGH decisions."
+}

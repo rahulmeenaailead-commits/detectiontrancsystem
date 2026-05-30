@@ -1,0 +1,72 @@
+{
+  "phase": 4,
+  "agent": "attack-scenario-runner",
+  "started_at": "2026-05-30T12:45:00Z",
+  "finished_at": "2026-05-30T12:50:00Z",
+  "mode": "heuristic",
+  "summary": "Six fraud scenarios executed against Sentinel in heuristic mode (no DeepSeek key). 2 of 6 scenarios caught: mule-transfer (HIGH via absolute amount >= 5000) and merchant-anomaly (HIGH via velocity — 5th txn within 5 min — though the actual anomaly attack tx was blocked by the resulting 423 freeze, not detected on merit). Card-testing, ATO, smurfing, and geo-impossible all missed. Biggest gap is absence of velocity/pattern aggregation for sub-threshold sequences and complete lack of geo-velocity logic.",
+  "findings": {
+    "scenarios": [
+      {
+        "name": "card-testing",
+        "expected": "MEDIUM/HIGH",
+        "got": "LOW",
+        "account_frozen": false,
+        "verdict": "MISS",
+        "fix_sketch": "Needs rolling velocity counter per user_id: flag HIGH if >= 5 txns in 5 min regardless of amount. Current code has no inter-transaction pattern detection."
+      },
+      {
+        "name": "ato",
+        "expected": "HIGH",
+        "got": "LOW",
+        "account_frozen": false,
+        "verdict": "MISS",
+        "fix_sketch": "$4800 is below the $5000 absolute threshold. The 30x ratio heuristic is dead code (not triggered in practice). Needs: ratio check activation OR LLM analysis of location/merchant context. Dubai + Wire Transfer at 3AM should be HIGH."
+      },
+      {
+        "name": "smurfing",
+        "expected": "HIGH",
+        "got": "MEDIUM (1 of 4), LOW (3 of 4)",
+        "account_frozen": false,
+        "verdict": "MISS",
+        "fix_sketch": "Each txn is just below $5000 threshold — individual checks pass. Needs rolling aggregate: sum of txns by user_id in last 60 min >= $10000 => HIGH. Classic structuring rule."
+      },
+      {
+        "name": "mule",
+        "expected": "HIGH + account_frozen",
+        "got": "HIGH",
+        "account_frozen": true,
+        "verdict": "CATCH",
+        "fix_sketch": "Correctly caught via absolute amount >= 5000 ($9000). Account frozen as expected. Trigger is amount threshold, not location — Lagos context not evaluated."
+      },
+      {
+        "name": "geo-impossible",
+        "expected": "HIGH",
+        "got": "LOW",
+        "account_frozen": false,
+        "verdict": "MISS",
+        "fix_sketch": "Sentinel has no geo-velocity check. Needs: store last txn location+timestamp per user; on new txn compute haversine distance / time_delta; if implied speed > 900 km/h => HIGH."
+      },
+      {
+        "name": "merchant-anomaly",
+        "expected": "HIGH (ratio or LLM)",
+        "got": "HIGH (velocity side-effect) — attack tx blocked 423",
+        "account_frozen": true,
+        "verdict": "PARTIAL_CATCH",
+        "fix_sketch": "Account frozen due to velocity on baseline txns (5th txn in window), not merchant anomaly detection. The Crypto Exchange attack tx returned 423 (user already frozen). Merchant category deviation is undetected in heuristic mode — needs LLM or merchant-category risk list."
+      }
+    ],
+    "detected": 2,
+    "missed": 4,
+    "coverage_pct": 33.3,
+    "gaps": [
+      "velocity counter per user_id over rolling 5-min window for card-testing patterns",
+      "ratio heuristic activation — 30x avg rule is dead code, needs wiring",
+      "sub-threshold aggregation: sum(user txns, 60 min) >= configurable limit for structuring detection",
+      "geo-distance vs last txn timestamp (haversine + implied speed check) for geo-impossible",
+      "merchant category risk scoring for anomaly detection in heuristic mode",
+      "location/context weighting in heuristic — Dubai + Wire Transfer should boost risk independent of amount"
+    ]
+  },
+  "brief_for_next": "Phase 5 security-prober: key attack surface findings from this run. (1) API requires X-API-Key header (default 'sentinel-dev-key' — hardcoded default is a disclosure risk). (2) Frozen accounts return HTTP 423 — prober should verify whether frozen check can be bypassed with a different user_id format or null values. (3) The /analyze endpoint inserts the transaction into DB BEFORE running analysis (self-contamination bug confirmed in prior phases) — a rapid flood of sub-threshold txns will inflate the user average, making future ratio detection even less likely. (4) Rate limit is 60/min per IP — test whether X-Forwarded-For spoofing bypasses it. (5) No geo logic at all — location field is stored but never validated or compared. (6) CORS is open (allow_origins=*) — relevant for browser-based CSRF against the API."
+}

@@ -1,0 +1,39 @@
+services:
+  backend:
+    build: ./backend
+    container_name: sentinel-backend
+    ports:
+      - "8000:8000"
+    environment:
+      # LLM (fraud reasoning). Empty / "your_key_here" -> deterministic heuristic.
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-your_key_here}
+      # Bright Data SERP API (live merchant reputation). Empty -> "disabled" mode.
+      - BRIGHTDATA_API_KEY=${BRIGHTDATA_API_KEY:-}
+      - BRIGHTDATA_SERP_ZONE=${BRIGHTDATA_SERP_ZONE:-serp_api1}
+      - BRIGHTDATA_TIMEOUT_SECONDS=${BRIGHTDATA_TIMEOUT_SECONDS:-30}
+      - MERCHANT_REPUTATION_TTL_HOURS=${MERCHANT_REPUTATION_TTL_HOURS:-24}
+      # Backend auth / CORS / rate limiting.
+      - SENTINEL_API_KEY=${SENTINEL_API_KEY:-sentinel-dev-key}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000}
+      - SENTINEL_ANALYZE_RATE=${SENTINEL_ANALYZE_RATE:-60/minute}
+    networks:
+      - sentinel-net
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+        # Baked in at build time; must match the backend SENTINEL_API_KEY above.
+        NEXT_PUBLIC_SENTINEL_API_KEY: ${SENTINEL_API_KEY:-sentinel-dev-key}
+    container_name: sentinel-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - sentinel-net
+
+networks:
+  sentinel-net:
+    driver: bridge

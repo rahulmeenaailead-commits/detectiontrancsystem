@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  :root{
+    --bg:#0B1220; --panel:#0F1A2C; --panel2:#111F36; --border:#22304A; --border2:#2C3C58;
+    --teal:#2DD4BF; --tealdim:#14B8A6; --text:#E8EFF8; --muted:#8DA0BC; --soft:#C4D2E6;
+    --red:#F43F5E; --green:#22C55E; --amber:#F59E0B; --blue:#3B82F6;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --mono:"SF Mono",ui-monospace,Menlo,monospace;
+  }
+  @page{ size:1280px 720px; margin:0; }
+  html,body{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{ font-family:var(--sans); color:var(--text); }
+  .slide{ position:relative; width:1280px; height:720px; overflow:hidden; page-break-after:always;
+    padding:54px 64px 46px; display:flex; flex-direction:column;
+    background:
+      radial-gradient(820px 540px at 8% 4%, rgba(45,212,191,.14), transparent 60%),
+      radial-gradient(680px 480px at 96% 98%, rgba(59,130,246,.09), transparent 60%),
+      linear-gradient(135deg,#0A0F1C 0%,#0C1626 55%,#0A1018 100%); }
+  .slide:last-child{ page-break-after:auto; }
+  .grid{ position:absolute; inset:0; pointer-events:none;
+    background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);
+    background-size:44px 44px; mask:radial-gradient(1000px 680px at 25% 25%,#000 30%,transparent 85%); }
+  .head{ position:relative; display:flex; justify-content:space-between; align-items:center; margin-bottom:26px; }
+  .eyebrow{ font-family:var(--mono); font-size:13px; letter-spacing:.14em; color:var(--muted); }
+  .eyebrow b{ color:var(--teal); font-weight:600; }
+  .pageno{ font-family:var(--mono); font-size:12px; color:var(--muted); letter-spacing:.1em; }
+  .h1{ position:relative; font-size:40px; font-weight:800; letter-spacing:-.015em; line-height:1.1; margin-bottom:8px; }
+  .h1 .ac{ color:var(--teal); }
+  .sub{ position:relative; font-size:18px; color:var(--soft); line-height:1.5; max-width:1000px; }
+  .body{ position:relative; flex:1; display:flex; gap:30px; margin-top:24px; }
+  .foot{ position:relative; display:flex; justify-content:space-between; align-items:center;
+    padding-top:16px; margin-top:14px; border-top:1px solid var(--border); }
+  .foot .l{ font-family:var(--mono); font-size:12px; color:var(--muted); letter-spacing:.06em; }
+  .foot .l b{ color:var(--teal); } .foot .r{ font-size:12px; color:var(--muted); font-style:italic; }
+  .col{ flex:1; display:flex; flex-direction:column; gap:14px; }
+  p{ font-size:17px; line-height:1.55; color:var(--soft); } p b{ color:#fff; font-weight:600; }
+  .card{ background:linear-gradient(180deg,#111F36,#0D1729); border:1px solid var(--border); border-radius:14px; padding:18px 20px; }
+  .card.tealedge{ border-color:rgba(45,212,191,.35); }
+  .card.rededge{ border-color:rgba(244,63,94,.35); }
+  .ctitle{ font-family:var(--mono); font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+  .ctitle.teal{ color:var(--teal); }
+  ul{ list-style:none; display:flex; flex-direction:column; gap:11px; }
+  li{ font-size:16px; line-height:1.45; color:var(--soft); padding-left:22px; position:relative; }
+  li:before{ content:"▸"; color:var(--teal); position:absolute; left:0; top:0; }
+  li b{ color:#fff; font-weight:600; }
+  .chips{ display:flex; flex-wrap:wrap; gap:9px; }
+  .chip{ font-family:var(--mono); font-size:13px; color:#BFD0E6; border:1px solid var(--border); background:rgba(255,255,255,.025); padding:7px 12px; border-radius:8px; }
+  .chip.bd{ border-color:rgba(45,212,191,.5); color:var(--teal); background:rgba(45,212,191,.08); }
+  .pill{ display:inline-flex; font-family:var(--mono); font-size:12px; letter-spacing:.12em; color:var(--muted); border:1px solid var(--border); padding:7px 14px; border-radius:999px; }
+  .pill b{ color:var(--teal); }
+  .track{ display:inline-flex; font-family:var(--mono); font-size:12px; letter-spacing:.14em; color:#0A0F1C; background:linear-gradient(90deg,var(--teal),#5EEAD4); padding:6px 14px; border-radius:999px; font-weight:700; }
+  /* title slide */
+  .brand{ display:flex; align-items:center; gap:20px; }
+  .mark{ width:84px; height:84px; }
+  .word{ font-size:90px; font-weight:800; letter-spacing:-.02em; line-height:1; background:linear-gradient(180deg,#fff,#BFE9E2); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .tag{ font-size:24px; font-weight:600; color:var(--teal); margin-top:16px; } .tag span{ color:var(--muted); }
+  /* code + tables */
+  .code{ font-family:var(--mono); font-size:13.5px; line-height:1.7; color:#CFE7E2; background:#08111E; border:1px solid var(--border); border-radius:12px; padding:16px 18px; white-space:pre; overflow:hidden; }
+  .code .k{ color:var(--teal); } .code .s{ color:#9FC2F0; } .code .c{ color:#5E7494; }
+  table{ width:100%; border-collapse:collapse; font-size:14.5px; }
+  th{ text-align:left; font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); padding:8px 10px; border-bottom:1px solid var(--border2); }
+  td{ padding:9px 10px; border-bottom:1px solid var(--border); color:var(--soft); }
+  td.imp{ font-family:var(--mono); font-weight:700; text-align:right; white-space:nowrap; }
+  .pos{ color:var(--green); } .neg{ color:var(--red); }
+  .note{ font-size:14.5px; color:var(--muted); line-height:1.5; } .note b{ color:var(--soft); }
+  /* steps */
+  .steps{ display:flex; flex-direction:column; gap:12px; }
+  .step{ display:flex; align-items:center; gap:16px; background:linear-gradient(180deg,#111F36,#0D1729); border:1px solid var(--border); border-radius:12px; padding:14px 18px; }
+  .num{ font-family:var(--mono); font-size:18px; font-weight:800; color:var(--teal); width:34px; height:34px; flex:0 0 auto; border:1px solid rgba(45,212,191,.4); border-radius:9px; display:flex; align-items:center; justify-content:center; background:rgba(45,212,191,.07); }
+  .step .st{ font-size:16.5px; font-weight:700; color:#EAF2FB; } .step .sd{ font-size:14px; color:var(--muted); margin-top:2px; }
+  .step.act{ border-color:rgba(45,212,191,.5); } .step.act .num{ color:#0A0F1C; background:var(--teal); }
+  .step.danger .num{ color:#fff; background:var(--red); border-color:var(--red); }
+  /* architecture nodes */
+  .nd{ width:100%; background:linear-gradient(180deg,#111F36,#0D1729); border:1px solid var(--border); border-radius:11px; padding:11px 16px; font-size:16px; font-weight:700; color:#EAF2FB; text-align:center; }
+  .nd small{ display:block; font-family:var(--mono); font-size:11px; font-weight:400; color:var(--muted); margin-top:3px; letter-spacing:.02em; }
+  .nd.sm{ padding:9px 12px; font-size:14px; } .nd.teal{ border-color:rgba(45,212,191,.5); }
+  .tealedge2{ border-color:rgba(45,212,191,.45); } .tealedge2 small{ color:var(--teal); }
+  .rededge2{ border-color:rgba(244,63,94,.45); } .rededge2 small{ color:var(--red); }
+  .ar{ color:var(--teal); font-size:17px; line-height:1; margin:6px 0; }
+  /* demo dashboard mock */
+  .dash{ background:linear-gradient(180deg,#111F36,#0D1729); border:1px solid var(--border); border-radius:14px; padding:16px; }
+  .dh{ display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+  .dh .t{ font-size:14px; font-weight:700; color:#DCE7F5; }
+  .dlive{ font-family:var(--mono); font-size:11px; color:var(--green); display:flex; align-items:center; gap:6px; }
+  .ddot{ width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 9px var(--green); }
+  .drow{ display:flex; align-items:center; gap:9px; padding:9px 11px; border-radius:9px; margin-top:7px; font-size:13px; border:1px solid transparent; }
+  .drow.ok{ background:rgba(34,197,94,.06); border-color:rgba(34,197,94,.18); }
+  .drow.bad{ background:rgba(244,63,94,.09); border-color:rgba(244,63,94,.30); }
+  .drow .a{ font-family:var(--mono); width:64px; font-weight:600; }
+  .drow .m{ flex:1; color:#C9D6E8; } .drow .m small{ display:block; color:var(--muted); font-size:10.5px; }
+  .bdg{ font-family:var(--mono); font-size:10px; font-weight:700; padding:3px 8px; border-radius:5px; letter-spacing:.04em; }
+  .bdg.low{ color:var(--green); background:rgba(34,197,94,.14); border:1px solid rgba(34,197,94,.4); }
+  .bdg.high{ color:#fff; background:rgba(244,63,94,.85); border:1px solid var(--red); }
+  .wr{ font-family:var(--mono); font-size:11px; display:flex; align-items:center; gap:5px; width:40px; justify-content:flex-end; }
+  .wr .d{ width:8px; height:8px; border-radius:50%; }
+  .dfrozen{ font-family:var(--mono); font-size:10.5px; color:var(--amber); margin-top:8px; }
+</style>
+</head>
+<body>
+
+<!-- SLIDE 1 — TITLE -->
+<section class="slide">
+  <div class="grid"></div>
+  <div class="head">
+    <div class="pill">WEB DATA <b>UNLOCKED</b> HACKATHON · BRIGHT DATA × LABLAB.AI</div>
+    <div class="track">SECURITY &amp; COMPLIANCE TRACK</div>
+  </div>
+  <div class="body" style="flex-direction:column; justify-content:center; gap:18px;">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5EEAD4"/><stop offset="1" stop-color="#0EA5A0"/></linearGradient></defs>
+        <path d="M50 5 L88 20 V48 C88 72 72 88 50 95 C28 88 12 72 12 48 V20 Z" fill="rgba(45,212,191,.10)" stroke="url(#g1)" stroke-width="3.5"/>
+        <circle cx="50" cy="50" r="22" stroke="url(#g1)" stroke-width="3" fill="none" opacity=".55"/>
+        <circle cx="50" cy="50" r="11" stroke="url(#g1)" stroke-width="3" fill="none"/>
+        <path d="M50 50 L72 32" stroke="#5EEAD4" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="50" cy="50" r="3.5" fill="#5EEAD4"/>
+      </svg>
+      <div class="word">SENTINEL</div>
+    </div>
+    <div class="tag">Fraud detection that doesn't guess. <span>It reads the web.</span></div>
+    <p style="font-size:19px; max-width:920px;">An <b>autonomous AI agent</b> that scores every transaction, reads the same public web a human investigator would — via the <b>Bright Data SERP API</b> — explains its verdict in plain English, and <b>freezes accounts</b> the instant risk goes HIGH.</p>
+    <div class="chips" style="margin-top:8px;">
+      <div class="chip">AI Agent</div><div class="chip bd">Bright Data SERP API</div><div class="chip">FastAPI</div><div class="chip">Next.js</div><div class="chip">DeepSeek LLM</div><div class="chip">Real-Time Risk</div>
+    </div>
+  </div>
+  <div class="foot"><div class="l">SENTINEL · <b>Autonomous Real-Time Fraud Detection</b></div><div class="r">01 / 07</div></div>
+</section>
+
+<!-- SLIDE 2 — PROBLEM -->
+<section class="slide">
+  <div class="grid"></div>
+  <div class="head"><div class="eyebrow"><b>SENTINEL</b> · THE PROBLEM</div><div class="pageno">02 / 07</div></div>
+  <div class="h1">Fraud engines reason in <span class="ac">a vacuum</span>.</div>
+  <div class="sub">A traditional engine sees <b>amount</b>, <b>user history</b>, maybe a velocity rule — and nothing about <i>who the merchant actually is</i>.</div>
+  <div class="body">
+    <div class="col" style="flex:1.15;">
+      <p>A brand-new shell merchant called <b>“FreeMoneyCryptoLottery”</b> looks identical to a legitimate one to a model that only sees numbers.</p>
+      <p>The signal that would expose it — <b>scam reports, Trustpilot ratings, BBB complaints, Reddit r/scams threads, news coverage</b> — lives on the <b>open web</b>: behind rate limits, bot detection, and geo-blocks that internal systems were never built to reach.</p>
+      <div class="pill" style="margin-top:4px;">⟶ Exactly the wall this hackathon targets: agents <b>&nbsp;throttled by stale, locked data</b></div>
+    </div>
+    <div class="col" style="flex:1;">
+      <div class="card">
+        <div class="ctitle">A numbers-only engine sees</div>
+        <ul><li>amount&nbsp;=&nbsp;$9,000</li><li>user&nbsp;avg&nbsp;=&nbsp;$45</li><li>location&nbsp;=&nbsp;a string</li></ul>
+      </div>
+      <div class="card rededge">
+        <div class="ctitle" style="color:var(--red)">…but is blind to</div>
+        <ul>
+          <li><b>Who</b> the merchant is</li>
+          <li>scamadviser / ripoffreport hits</li>
+          <li>r/scams threads · 1.2★ Trustpilot</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><div class="l">SENTINEL · <b>The signal lives on the open web</b></div><div class="r">Web Data UNLOCKED · Bright Data × lablab.ai</div></div>
+</section>
+
+<!-- SLIDE 3 — SOLUTION -->
+<section class="slide">
+  <div class="grid"></div>
+  <div class="head"><div class="eyebrow"><b>SENTINEL</b> · THE SOLUTION</div><div class="pageno">03 / 07</div></div>
+  <div class="h1">Live web context on <span class="ac">every transaction</span>.</div>
+  <div class="sub">Five layers, combined by <b>maximum risk</b> — so no layer can ever silently weaken the verdict.</div>
+  <div class="body">
+    <div class="col steps">
+      <div class="step"><div class="num">1</div><div><div class="st">Deterministic risk floor</div><div class="sd">amount · velocity · impossible-travel geo · structuring</div></div></div>
+      <div class="step act"><div class="num">2</div><div><div class="st">Bright Data SERP API → merchant web reputation</div><div class="sd">reads scam reports, Trustpilot, BBB, r/scams, news — scored 0–100</div></div></div>
+      <div class="step"><div class="num">3</div><div><div class="st">DeepSeek LLM reasoning</div><div class="sd">plain-English, compliance-grade explanation over the real evidence</div></div></div>
+      <div class="step"><div class="num">4</div><div><div class="st">Combine by MAX risk</div><div class="sd">no layer can be silently overridden downward</div></div></div>
+      <div class="step danger"><div class="num">5</div><div><div class="st">HIGH → autonomous account freeze</div><div class="sd">rejects every further transaction (423 Locked) until a human unfreezes</div></div></div>
+    </div>
+  </div>
+  <div class="foot"><div class="l">SENTINEL · <b>It reads the same web a fraud investigator would — and acts on its own</b></div><div class="r">Web Data UNLOCKED · Bright Data × lablab.ai</div></div>
+</section>
+
+<!-- SLIDE 4 — BRIGHT DATA -->
+<section class="slide">
+  <div class="grid"></div>
+  <div class="head"><div class="eyebrow"><b>SENTINEL</b> · BRIGHT DATA INTEGRATION</div><div class="pageno">04 / 07</div></div>
+  <div class="h1">Bright Data SERP API — the <span class="ac">heart</span> of the agent.</div>
+  <div class="sub">One Google search per merchant, returned as structured JSON, scored deterministically into a 0–100 reputation.</div>
+  <div class="body">
+    <div class="col" style="flex:1.05;">
+      <div class="code"><span class="c"># one search per merchant</span>
+query = <span class="s">"{merchant} reviews scam complaints"</span>
+<span class="k">POST</span> https://api.brightdata.com/request
+{
+  <span class="k">"zone"</span>:   <span class="s">"serp_api1"</span>,
+  <span class="k">"url"</span>:    <span class="s">".../search?q=&lt;q&gt;&brd_json=1"</span>,
+  <span class="k">"format"</span>: <span class="s">"raw"</span>
+}
+Authorization: Bearer $BRIGHTDATA_API_KEY</div>
+      <div class="note"><b>brd_json=1</b> returns the SERP as JSON. Sentinel parses the top 5 organic results and scores them — base <b>50</b>, clamped to <b>[0,100]</b>.</div>
+    </div>
+    <div class="col" style="flex:1;">
+      <table>
+        <tr><th>Web signal in the SERP</th><th style="text-align:right">Score</th></tr>
+        <tr><td>Scam-flag domain (scamadviser, ripoffreport…)</td><td class="imp neg">−30 ea</td></tr>
+        <tr><td>Trustpilot rating ≥ 4.5★</td><td class="imp pos">+20</td></tr>
+        <tr><td>Trustpilot rating ≤ 2.0★</td><td class="imp neg">−25</td></tr>
+        <tr><td>BBB (bbb.org) listing</td><td class="imp pos">+15</td></tr>
+        <tr><td>Reddit r/scams hit</td><td class="imp neg">−20</td></tr>
+        <tr><td>Reputable news (Reuters, BBC, WSJ…)</td><td class="imp pos">+10</td></tr>
+      </table>
+      <div class="card tealedge" style="padding:13px 16px;">
+        <div class="ctitle teal">Wired into the decision — not cosmetic</div>
+        <div class="note">score <b>&lt; 30 → ≥ MEDIUM</b>, <b>&lt; 15 → HIGH</b> · cached <b>24h</b> (1st sighting live ~1–3s, then sub-ms) · <b>disabled-safe</b> if no key.</div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><div class="l">SENTINEL · <b>Mandatory Bright Data product ✓ — SERP API on every transaction</b></div><div class="r">Web Data UNLOCKED · Bright Data × lablab.ai</div></div>
+</section>
+
+<!-- SLIDE 5 — ARCHITECTURE -->
+<section class="slide">
+  <div class="grid"></div>
+  <div class="head"><div class="eyebrow"><b>SENTINEL</b> · ARCHITECTURE</div><div class="pageno">05 / 07</div></div>
+  <div class="h1">Defense in depth, <span class="ac">one decision</span>.</div>
+  <div class="sub">A FastAPI agent fuses deterministic rules, live web reputation, and LLM reasoning — then acts.</div>
+  <div class="body">
+    <div class="col" style="flex:1; gap:0; align-items:center; justify-content:center;">
+      <div class="nd">Next.js Dashboard <small>poll /transactions · POST /analyze</small></div>
+      <div class="ar">▼</div>
+      <div class="nd teal">FastAPI Backend <small>X-API-Key auth · rate limit · CORS · validation</small></div>
+      <div class="ar">▼</div>
+      <div style="display:flex; gap:14px; width:100%;">
+        <div class="nd sm" style="flex:1;">SQLite <small>file · WAL</small></div>
+        <div class="nd sm" style="flex:1.4;">Agent <small>rules · web rep · LLM → MAX risk</small></div>
+      </div>
+      <div class="ar">▼</div>
+      <div style="display:flex; gap:14px; width:100%;">
+        <div class="nd sm tealedge2" style="flex:1;">Bright Data<small>SERP API</small></div>
+        <div class="nd sm" style="flex:1;">DeepSeek<small>deepseek-chat</small></div>
+        <div class="nd sm rededge2" style="flex:1;">freeze_user()<small>on HIGH</small></div>
+      </div>
+    </div>
+    <div class="col" style="flex:1.05;">
+      <table>
+        <tr><th>Layer</th><th>What it catches</th></tr>
+        <tr><td><b>Amount / ratio</b></td><td>≥ $5k or ≥ 30× avg → HIGH</td></tr>
+        <tr><td><b>Velocity</b></td><td>≥ 5 txn / 5 min → HIGH</td></tr>
+        <tr><td><b>Geo</b></td><td>impossible travel &lt; 5 min → HIGH</td></tr>
+        <tr><td><b>Structuring</b></td><td>rolling 60-min ≥ $20k → MEDIUM</td></tr>
+        <tr><td><b>Web rep floor</b></td><td>score &lt; 30 → ≥ MEDIUM; &lt; 15 → HIGH</td></tr>
+        <tr><td><b>LLM reasoning</b></td><td>narrative — can only <i>raise</i> the floor</td></tr>
+      </table>
+      <div class="note" style="margin-top:2px;">Dual-mode: real key → <b>DeepSeek</b>; no key → fully <b>deterministic heuristic</b>, so the demo always works.</div>
+    </div>
+  </div>
+  <div class="foot"><div class="l">SENTINEL · <b>Combine by MAX risk — graceful degradation on every external dependency</b></div><div class="r">Web Data UNLOCKED · Bright Data × lablab.ai</div></div>
+</section>
+
+<!-- SLIDE 6 — DEMO -->
+<section class="slide">
+  <div class="grid"></div>
+  <div class="head"><div class="eyebrow"><b>SENTINEL</b> · LIVE DEMO</div><div class="pageno">06 / 07</div></div>
+  <div class="h1">Live web → cache, <span class="ac">in real time</span>.</div>
+  <div class="sub">Every merchant verdict is auditable — and the second sighting is sub-millisecond.</div>
+  <div class="body">
+    <div class="col" style="flex:1.1;">
+      <div class="dash">
+        <div class="dh"><div class="t">Sentinel — Live Transactions</div><div class="dlive"><span class="ddot"></span>LIVE</div></div>
+        <div class="drow ok"><div class="a">$42.00</div><div class="m">Blue Bottle Coffee<small>New York, NY · 🌐 live lookup → resolved</small></div><div class="bdg low">LOW</div><div class="wr"><span class="d" style="background:var(--green);box-shadow:0 0 7px var(--green)"></span>92</div></div>
+        <div class="drow ok"><div class="a">$48.00</div><div class="m">Blue Bottle Coffee<small>New York, NY · cached ·c (sub-ms)</small></div><div class="bdg low">LOW</div><div class="wr"><span class="d" style="background:var(--green)"></span>92</div></div>
+        <div class="drow bad"><div class="a">$9,000</div><div class="m">Unknown Wire Transfer<small>Lagos, Nigeria · 🌐 live lookup → scam hits</small></div><div class="bdg high">HIGH</div><div class="wr"><span class="d" style="background:var(--red);box-shadow:0 0 7px var(--red)"></span>12</div></div>
+        <div class="dfrozen">⛔ ACCOUNT FROZEN — autonomous · further transactions rejected (423)</div>
+      </div>
+    </div>
+    <div class="col" style="flex:1;">
+      <ul>
+        <li>New merchant row shows <b>🌐 live web lookup</b> → resolves to a <b>green</b> badge (~1–3s).</li>
+        <li>Next sighting renders instantly with a <b>·c cached</b> marker — the live-web → cache beat.</li>
+        <li>Bad merchant (<b>Unknown Wire Transfer</b>) → <b>red</b> badge → risk <b>HIGH</b> → <b>account frozen</b>.</li>
+        <li>Click the badge → modal shows the <b>actual SERP evidence</b>: scamadviser, ripoffreport, r/scams — clickable.</li>
+        <li>Retry that user → <b>rejected (423)</b>, proving the autonomous freeze holds.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot"><div class="l">SENTINEL · <b>“Not guessing — reading the same web a fraud investigator would”</b></div><div class="r">Web Data UNLOCKED · Bright Data × lablab.ai</div></div>
+</section>
+
+<!-- SLIDE 7 — IMPACT & NEXT -->
+<section class="slide">
+  <div class="grid"></div>
+  <div class="head"><div class="eyebrow"><b>SENTINEL</b> · IMPACT &amp; WHAT'S NEXT</div><div class="pageno">07 / 07</div></div>
+  <div class="h1">Production-shaped, <span class="ac">not a toy</span>.</div>
+  <div class="sub">Built for the Security &amp; Compliance track — third-party / merchant risk, investigated autonomously.</div>
+  <div class="body">
+    <div class="col" style="flex:1;">
+      <div class="ctitle teal">Why it matters</div>
+      <ul>
+        <li><b>Autonomous action</b> — agent investigates risk across the open web and freezes accounts with no human in the loop.</li>
+        <li><b>Merchant / third-party risk</b> — the exact gap traditional engines miss.</li>
+        <li><b>Production-ready</b> — API-key auth, locked CORS, 60/min rate limit, strict validation, 423 freeze enforcement.</li>
+        <li><b>Graceful degradation</b> — every external call (Bright Data, DeepSeek) has a defined failure mode that never blocks a transaction.</li>
+      </ul>
+    </div>
+    <div class="col" style="flex:1;">
+      <div class="ctitle teal">What's next</div>
+      <ul>
+        <li><b>Web Unlocker / Scraping Browser</b> — read full scam-report pages, not just SERP snippets.</li>
+        <li><b>Continuous re-scoring</b> of known merchants beyond the 24h TTL.</li>
+        <li><b>Sanctions / watchlist screening</b> via live web sources — deepens the compliance angle.</li>
+        <li><b>Per-category risk policies</b> — tunable thresholds by merchant type.</li>
+      </ul>
+      <div class="card tealedge" style="padding:13px 16px; margin-top:2px;">
+        <div class="ctitle teal" style="margin-bottom:7px;">Links</div>
+        <div class="note" style="line-height:1.7;">
+          <b>GitHub:</b> github.com/&lt;you&gt;/sentinel<br>
+          <b>Demo:</b> http://localhost:3000 &nbsp;·&nbsp; API http://localhost:8000<br>
+          <b>Web data:</b> Bright Data SERP API
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><div class="l">SENTINEL · <b>Fraud detection that doesn't guess. It reads the web.</b></div><div class="r">Web Data UNLOCKED · Bright Data × lablab.ai</div></div>
+</section>
+
+</body>
+</html>

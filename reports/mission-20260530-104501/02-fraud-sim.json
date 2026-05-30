@@ -1,0 +1,64 @@
+{
+  "phase": 2,
+  "agent": "fraud-simulator",
+  "started_at": "2026-05-30T06:09:25Z",
+  "finished_at": "2026-05-30T06:10:15Z",
+  "mode": "heuristic",
+  "summary": "60 transactions sent across 5 fresh users (sim-p2-4985-u1 through u5). Intended mix: 49 LOW, 7 MEDIUM, 4 HIGH. The baseline phase (5 txns/user posted in rapid succession) triggered a velocity anomaly heuristic on txn #5 for every user — all 5 users were frozen before any MEDIUM or HIGH transaction could process. Result: 20 LOW classified, 5 LOW-intended classified as HIGH (velocity trigger), 35 rejected with HTTP 423 (frozen account). No MEDIUM or HIGH transactions were evaluated by the fraud engine. The $5000 absolute threshold was never tested. The velocity check (5 txns in 5 minutes) is a more aggressive trigger than documented and fires even on legitimate small-value transactions submitted in batch, creating severe false-positive risk.",
+  "findings": {
+    "sent": 60,
+    "intended_mix": { "low": 49, "medium": 7, "high": 4 },
+    "classified": { "low": 20, "medium": 0, "high": 5 },
+    "frozen_users": ["sim-p2-4985-u1", "sim-p2-4985-u2", "sim-p2-4985-u3", "sim-p2-4985-u4", "sim-p2-4985-u5"],
+    "user_ids": ["sim-p2-4985-u1", "sim-p2-4985-u2", "sim-p2-4985-u3", "sim-p2-4985-u4", "sim-p2-4985-u5"],
+    "rejected_frozen_account": 35,
+    "surprises": [
+      {
+        "id": "tx-sim-1780121365464-5",
+        "intended": "LOW",
+        "got": "HIGH",
+        "amount": 39.24,
+        "merchant": "Metro Transit",
+        "user_id": "sim-p2-4985-u1",
+        "explanation": "Velocity anomaly: 5 transactions in the last 5 minutes for user. Amount $39.24 within normal range."
+      },
+      {
+        "id": "tx-sim-1780121365464-10",
+        "intended": "LOW",
+        "got": "HIGH",
+        "amount": 46.07,
+        "merchant": "Metro Transit",
+        "user_id": "sim-p2-4985-u2",
+        "explanation": "Velocity anomaly: 5 transactions in the last 5 minutes. Amount $46.07 within normal range."
+      },
+      {
+        "id": "tx-sim-1780121365464-15",
+        "intended": "LOW",
+        "got": "HIGH",
+        "amount": 15.18,
+        "merchant": "Metro Transit",
+        "user_id": "sim-p2-4985-u3",
+        "explanation": "Velocity anomaly: 5 transactions in the last 5 minutes. Amount $15.18 within normal range."
+      },
+      {
+        "id": "tx-sim-1780121365464-20",
+        "intended": "LOW",
+        "got": "HIGH",
+        "amount": 17.03,
+        "merchant": "Metro Transit",
+        "user_id": "sim-p2-4985-u4",
+        "explanation": "Velocity anomaly: 5 transactions in the last 5 minutes. Amount $17.03 within normal range."
+      },
+      {
+        "id": "tx-sim-1780121365464-25",
+        "intended": "LOW",
+        "got": "HIGH",
+        "amount": 72.77,
+        "merchant": "Metro Transit",
+        "user_id": "sim-p2-4985-u5",
+        "explanation": "Velocity anomaly: 5 transactions in the last 5 minutes. Amount $72.77 within normal range."
+      }
+    ]
+  },
+  "brief_for_next": "Phase 3 edge-case-hunter: five users sim-p2-4985-u1 through sim-p2-4985-u5 exist in the DB but ALL are frozen. You must use fresh user IDs (different prefix). Key behaviors confirmed: (1) velocity heuristic triggers HIGH+freeze at exactly 5 txns in 5 minutes regardless of amount — the threshold appears to be >=5 txns in a 5-minute window; (2) once frozen, all subsequent transactions are HTTP 423 rejected and never touch the fraud engine; (3) the $5000 absolute HIGH trigger was NOT testable in this run due to premature freezing — edge-case-hunter should test it with a fresh user sending just 1-2 baseline txns then immediately one at $4999, $5000, $5001; (4) self-contamination bug from Phase 1 means ratio-based 30x trigger is unreliable — stick to absolute $5000 threshold; (5) API requires header X-API-Key: sentinel-dev-key; (6) backend is in heuristic mode (no valid DeepSeek key). DB has transactions from sim-p2-4985-* prefix. Use a new prefix like sim-p3-<rand>."
+}

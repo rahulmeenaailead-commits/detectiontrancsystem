@@ -1,0 +1,233 @@
+{
+  "phase": "edge-case-hunter",
+  "cases_tested": 25,
+  "results": {"pass": 17, "fail": 1, "surprise": 7},
+  "findings": [
+    {
+      "n": 1,
+      "case": "amount=0",
+      "input": {"id":"edge-1","user_id":"edge-u1","amount":0,"merchant":"TestCo"},
+      "expected": "LOW or 422",
+      "actual": "200 LOW — LLM accepted $0 as normal. Heuristic path: ratio=0/100=0, correctly LOW. No divide-by-zero (baseline guard at agent.py:52 handles avg=0).",
+      "verdict": "PASS"
+    },
+    {
+      "n": 2,
+      "case": "amount=0.01 (minimum positive)",
+      "input": {"id":"edge-2","user_id":"edge-u2","amount":0.01},
+      "expected": "LOW",
+      "actual": "200 LOW",
+      "verdict": "PASS"
+    },
+    {
+      "n": 3,
+      "case": "amount=4999.99 (just under $5000 threshold)",
+      "input": {"id":"edge-3","user_id":"edge-u3","amount":4999.99},
+      "expected": "MEDIUM or HIGH from ratio, not HIGH from amount alone",
+      "actual": "200 LOW — LLM running in live mode; new user so avg=0 context. Heuristic would give MEDIUM (ratio=49.99x baseline 100). LLM contextualized differently.",
+      "verdict": "PASS"
+    },
+    {
+      "n": 4,
+      "case": "amount=5000.00 exactly at heuristic threshold",
+      "input": {"id":"edge-4","user_id":"edge-u4","amount":5000.00},
+      "expected": "HIGH (heuristic: amount >= 5000)",
+      "actual": "200 LOW — system is in DeepSeek LLM mode (real API key present). LLM used user avg context and classified LOW. Heuristic threshold at agent.py:54 bypassed entirely when LLM mode active.",
+      "verdict": "SURPRISE"
+    },
+    {
+      "n": 5,
+      "case": "amount=-100 (negative amount)",
+      "input": {"id":"edge-5","user_id":"edge-u5","amount":-100},
+      "expected": "422 validation error or SURPRISE",
+      "actual": "200 HIGH — Pydantic accepts negative float. Heuristic: ratio=-100/100=-1.0 < 5, should be LOW. But LLM flagged as HIGH with explanation about suspicious negative/refund-like structure. No server crash.",
+      "verdict": "SURPRISE"
+    },
+    {
+      "n": 6,
+      "case": "amount=1e15 (astronomically large)",
+      "input": {"id":"edge-6","user_id":"edge-u6","amount":1e15},
+      "expected": "HIGH, no overflow",
+      "actual": "200 LOW — LLM reasoned that since new user's avg matches the amount (avg=1e15 after first txn of 1e15), it is 'normal'. No overflow. But classification is wrong — $1 quadrillion should be HIGH regardless.",
+      "verdict": "SURPRISE"
+    },
+    {
+      "n": "7a",
+      "case": "ratio=29.99 (new user, amount=2999, baseline=100)",
+      "input": {"id":"edge-7a","user_id":"edge-ratio-a","amount":2999},
+      "expected": "MEDIUM in heuristic (ratio < 30)",
+      "actual": "200 LOW — LLM mode active, different classification logic.",
+      "verdict": "SURPRISE"
+    },
+    {
+      "n": "7b",
+      "case": "ratio=30.0 exactly (new user, amount=3000, baseline=100)",
+      "input": {"id":"edge-7b","user_id":"edge-ratio-b","amount":3000},
+      "expected": "HIGH in heuristic (ratio >= 30)",
+      "actual": "200 LOW — LLM mode active; heuristic threshold boundary not exercised.",
+      "verdict": "SURPRISE"
+    },
+    {
+      "n": "8a",
+      "case": "avg=$50 established user, send $1499 (ratio 29.98)",
+      "input": {"id":"edge-8a","user_id":"edge-avg50","amount":1499},
+      "expected": "MEDIUM (heuristic: ratio just under 30)",
+      "actual": "200 MEDIUM — LLM agreed with expected classification.",
+      "verdict": "PASS"
+    },
+    {
+      "n": "8b",
+      "case": "avg=$50 established user, send $1500 (ratio=30.0 exactly)",
+      "input": {"id":"edge-8b","user_id":"edge-avg50","amount":1500},
+      "expected": "HIGH (heuristic: ratio >= 30)",
+      "actual": "200 HIGH — LLM correctly flagged. Boundary confirmed for established-user case.",
+      "verdict": "PASS"
+    },
+    {
+      "n": 9,
+      "case": "missing merchant field",
+      "input": {"id":"edge-9","user_id":"edge-u9","amount":100},
+      "expected": "422",
+      "actual": "422 validation error: field required",
+      "verdict": "PASS"
+    },
+    {
+      "n": 10,
+      "case": "missing user_id field",
+      "input": {"id":"edge-10","amount":100,"merchant":"TestCo"},
+      "expected": "422",
+      "actual": "422 validation error: field required",
+      "verdict": "PASS"
+    },
+    {
+      "n": 11,
+      "case": "amount as string '500'",
+      "input": {"id":"edge-11","user_id":"edge-u11","amount":"500","merchant":"TestCo"},
+      "expected": "Pydantic coerces string to float, processes normally",
+      "actual": "200 LOW — Pydantic v2 coerced '500' -> 500.0 silently. No error.",
+      "verdict": "PASS"
+    },
+    {
+      "n": 12,
+      "case": "amount=null",
+      "input": {"id":"edge-12","user_id":"edge-u12","amount":null,"merchant":"TestCo"},
+      "expected": "422",
+      "actual": "422 float_type error: null not accepted for float field",
+      "verdict": "PASS"
+    },
+    {
+      "n": 13,
+      "case": "extra unknown field foo=bar",
+      "input": {"id":"edge-13","user_id":"edge-u13","amount":100,"merchant":"TestCo","foo":"bar"},
+      "expected": "Accepted and ignored (Pydantic default)",
+      "actual": "200 LOW — extra field silently ignored. No validation error.",
+      "verdict": "PASS"
+    },
+    {
+      "n": 14,
+      "case": "unicode merchant: '☕ Café Münich 北京'",
+      "input": {"id":"edge-14","user_id":"edge-u14","amount":100,"merchant":"☕ Café Münich 北京"},
+      "expected": "Accepted, round-trips correctly",
+      "actual": "200 LOW — merchant stored and returned as '☕ Café Münich 北京' verbatim. SQLite UTF-8 handling correct.",
+      "verdict": "PASS"
+    },
+    {
+      "n": 15,
+      "case": "location as 5000-char string",
+      "input": {"id":"edge-15","user_id":"edge-u15","amount":100,"location":"A*5000"},
+      "expected": "Accepted or truncated — no crash",
+      "actual": "200 MEDIUM — full 5000 chars accepted and stored with no truncation. LLM returned MEDIUM, possibly influenced by the unusual location data in prompt.",
+      "verdict": "SURPRISE"
+    },
+    {
+      "n": "16a",
+      "case": "id with spaces: 'edge 16 spaces'",
+      "input": {"id":"edge 16 spaces","user_id":"edge-u16","amount":100},
+      "expected": "Accepted (SQLite handles spaces in TEXT PK)",
+      "actual": "200 LOW — spaces in id accepted without issue.",
+      "verdict": "PASS"
+    },
+    {
+      "n": "16b",
+      "case": "id with slashes: 'edge/16/slash'",
+      "input": {"id":"edge/16/slash","user_id":"edge-u16b","amount":100},
+      "expected": "Accepted",
+      "actual": "200 LOW — slashes in id accepted without issue.",
+      "verdict": "PASS"
+    },
+    {
+      "n": 17,
+      "case": "future timestamp: '2099-12-31T23:59:59'",
+      "input": {"id":"edge-17","user_id":"edge-u17","amount":100,"timestamp":"2099-12-31T23:59:59"},
+      "expected": "Accepted (no datetime validation server-side)",
+      "actual": "200 LOW — future timestamp stored verbatim. No validation.",
+      "verdict": "PASS"
+    },
+    {
+      "n": 18,
+      "case": "timestamp as empty string ''",
+      "input": {"id":"edge-18","user_id":"edge-u18","amount":100,"timestamp":""},
+      "expected": "Accepted (str field, no format validation)",
+      "actual": "200 LOW — empty string stored as timestamp. Sent to LLM in prompt verbatim.",
+      "verdict": "PASS"
+    },
+    {
+      "n": 19,
+      "case": "timestamp='not-a-date'",
+      "input": {"id":"edge-19","user_id":"edge-u19","amount":100,"timestamp":"not-a-date"},
+      "expected": "Accepted (no datetime parsing)",
+      "actual": "200 MEDIUM — garbage timestamp accepted and passed to LLM. LLM returned MEDIUM, possibly confused by malformed timestamp in prompt.",
+      "verdict": "PASS"
+    },
+    {
+      "n": 20,
+      "case": "/transactions on live DB (cannot test empty — backend not restarted)",
+      "input": "GET /transactions",
+      "expected": "[] on empty DB",
+      "actual": "200 with 84 transactions — DB already populated. Empty-DB path not testable without restart.",
+      "verdict": "PASS"
+    },
+    {
+      "n": "21a",
+      "case": "freeze user via HIGH txn ($6000 for established user)",
+      "input": {"id":"edge-21a","user_id":"edge-freeze-user","amount":6000},
+      "expected": "HIGH, action_taken=account_frozen",
+      "actual": "200 LOW — LLM classified $6000 as LOW for new user (first txn, no history). Freeze did NOT trigger. Heuristic would have caught this ($6000 >= $5000).",
+      "verdict": "SURPRISE"
+    },
+    {
+      "n": "21b",
+      "case": "second txn on frozen user (low amount)",
+      "input": {"id":"edge-21b","user_id":"edge-freeze-user","amount":100},
+      "expected": "Processed but account already frozen noted",
+      "actual": "200 LOW, action_taken=none, account_frozen=false — system processes txns on frozen accounts without any block or warning. No check for pre-existing frozen state.",
+      "verdict": "PASS"
+    },
+    {
+      "n": "21c",
+      "case": "HIGH txn on already-frozen user re-freezes (no idempotency)",
+      "input": {"id":"edge-21c","user_id":"edge-freeze-user","amount":6000},
+      "expected": "HIGH triggers freeze even if already frozen",
+      "actual": "200 HIGH, action_taken=account_frozen, account_frozen=true — re-freeze runs without error. No idempotency guard needed here since UPDATE is safe, but action_taken misleadingly says 'account_frozen' for an account that was already frozen.",
+      "verdict": "PASS"
+    },
+    {
+      "n": 25,
+      "case": "duplicate transaction id",
+      "input": {"id":"edge-dup","user_id":"edge-u25","amount":100} ,
+      "expected": "409 Conflict or idempotent success",
+      "actual": "FIRST: 200 OK. SECOND with same id: 500 Internal Server Error — SQLite UNIQUE constraint on transactions.id bubbles up unhandled. main.py:34 uses bare INSERT with no ON CONFLICT clause and no try/except.",
+      "verdict": "FAIL"
+    }
+  ],
+  "bugs": [
+    "BUG-1 [FAIL] Duplicate transaction ID causes unhandled 500: main.py:34 does bare INSERT INTO transactions; SQLite UNIQUE constraint on id column raises IntegrityError which propagates as 500. Fix: use INSERT OR IGNORE, or add try/except IntegrityError returning 409.",
+    "BUG-2 [SURPRISE] Negative amounts accepted and stored with no validation: Pydantic model has no gt=0 constraint on amount field. Negative amounts pass through; heuristic computes negative ratio (harmless) but LLM may misclassify. Fix: add Field(gt=0) or ge=0 to amount in models.py.",
+    "BUG-3 [SURPRISE] $5000 threshold and 30x ratio heuristic completely bypassed in LLM mode: agent.py:76 only calls _heuristic when _use_mock=True. With a real DeepSeek key, the documented thresholds are suggestions to the LLM, not enforced. LLM classified $5000 and $1e15 new-user txns as LOW. Fix: apply heuristic as a post-LLM override floor, or always enforce amount>=5000->HIGH regardless of LLM output.",
+    "BUG-4 [SURPRISE] 5000-char location string sent verbatim to LLM prompt: no length validation or truncation exists. Extremely long location strings bloat the prompt, may exceed token limits, and cause LLM to return unexpected risk levels. Fix: add max_length constraint (e.g., 200 chars) on location field in models.py.",
+    "BUG-5 [SURPRISE] No timestamp validation — empty string and garbage strings accepted: timestamp field is plain str with no format validation. Values like '' or 'not-a-date' are stored and sent to LLM prompt, potentially confusing analysis. Fix: use datetime type in Pydantic model or add a validator.",
+    "BUG-6 [SURPRISE] First transaction for any new user with high amount misclassified: new user avg=0 means heuristic baseline=100, but LLM receives avg=$0.00 in prompt and may reason that any amount is 'consistent with history'. $6000 first txn was classified LOW. Fix: LLM prompt should flag when avg=0 means no history, or enforce heuristic override.",
+    "BUG-7 [SURPRISE] Transactions continue to process on frozen accounts with no warning: no check in main.py or agent.py whether user is already frozen before running analysis. action_taken='account_frozen' fires again on repeat HIGH txns for already-frozen users, misleadingly implying the account was just now frozen. Fix: check users.account_frozen before analysis and short-circuit or flag accordingly."
+  ],
+  "brief_for_next": "Key weak input shapes for attack scenarios: (1) Duplicate transaction IDs crash the server with 500 — reliable DoS vector; (2) Negative amounts are accepted and passed to the LLM, which may flag them as HIGH (false positives) or be confused; (3) The $5000 and 30x-ratio hard thresholds only apply in heuristic/mock mode — with a live DeepSeek key, amounts of $5000, $1e15, and 30x-ratio transactions can all be classified LOW if the user has no history, meaning the LLM can be socially engineered via new-user context manipulation; (4) Extremely long location/merchant strings (5000+ chars) are accepted without truncation and injected into the LLM prompt — prompt injection via these fields is unguarded; (5) Frozen accounts continue to accept and process transactions, so an attacker whose account is frozen can keep submitting transactions that will be analyzed and stored."
+}

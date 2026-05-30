@@ -1,0 +1,31 @@
+{
+  "phase": "06-load-tester",
+  "status": "COMPLETED",
+  "note": "load-tester subagent hit repeated stream-idle timeouts; orchestrator ran the ramp directly via authenticated ctx_execute against the live hardened backend.",
+  "auth": "X-API-Key: sentinel-dev-key (required; unauthenticated => 401)",
+  "endpoint": "POST /analyze",
+  "payload": "full valid schema {id,user_id,amount,location,timestamp,merchant}, unique user_id+id per request, amount $10-200 (stays LOW), to avoid velocity-freeze/423 skew",
+  "levels": [
+    {"c": 1,  "n": 5,  "status_counts": {"200": 5},  "rps": 104.0,  "p50": 1.7,  "p95": 41.0, "p99": 41.0},
+    {"c": 2,  "n": 8,  "status_counts": {"200": 8},  "rps": 844.4,  "p50": 2.3,  "p95": 2.5,  "p99": 2.5},
+    {"c": 5,  "n": 15, "status_counts": {"200": 15}, "rps": 982.3,  "p50": 4.6,  "p95": 5.6,  "p99": 5.6},
+    {"c": 10, "n": 20, "status_counts": {"200": 20}, "rps": 961.7,  "p50": 9.3,  "p95": 12.2, "p99": 12.2},
+    {"c": 20, "n": 40, "status_counts": {"200": 40}, "rps": 871.1,  "p50": 20.4, "p95": 23.6, "p99": 23.7},
+    {"c": 50, "n": 60, "status_counts": {"200": 60}, "rps": 1316.8, "p50": 32.9, "p95": 38.9, "p99": 39.2}
+  ],
+  "single_burst_probe": {"simultaneous": 90, "status_counts": {"200": 90}, "purpose": "rate-limit check: 90 >> 60/minute"},
+  "totals": {"requests": 238, "http_200": 238, "errors": 0, "rate_limited_429": 0, "timeouts": 0},
+  "knee_concurrency": null,
+  "knee_note": "No knee/saturation within c<=50. Latency scales ~linearly with concurrency (p50 ~ 0.65ms * c), consistent with single-threaded SQLite serializing under a global lock; per-request work is sub-millisecond. First request shows ~41ms cold-start warmup (p95 at c=1).",
+  "p50_p95_p99_overall": {"p50_steady_ms": 1.7, "p95_at_c50_ms": 38.9, "p99_at_c50_ms": 39.2},
+  "rate_limit_observed": false,
+  "rate_limit_configured": "60/minute (SENTINEL_ANALYZE_RATE, main.py:34/96)",
+  "findings": [
+    "Throughput and latency are healthy: 238/238 requests returned 200 with zero errors; steady-state p50 ~1.7ms, p95 <= ~39ms even at concurrency 50; peak ~1300 rps.",
+    "RATE LIMITING IS CONFIGURED BUT NOT ENFORCED: 90 simultaneous (and 238 total within the minute) requests all returned 200, zero 429. Root cause in code: slowapi Limiter + @limiter.limit decorator + RateLimitExceeded handler are present, but app.add_middleware(SlowAPIMiddleware) is NEVER called (only CORSMiddleware is added at main.py:56). The decorator is inert without the middleware. This confirms the prior-mission 'no rate limiting on /analyze' finding and contradicts Phase 5's 'PARTIAL/configured' read.",
+    "Latency grows linearly with concurrency rather than hitting a sharp knee, indicating request serialization (single global SQLite lock) rather than parallel processing. Fine at demo scale; would cap single-process throughput under heavy real load.",
+    "No 5xx, no connection failures, no timeouts at any tested level.",
+    "Because the in-process rate limiter is inert, /analyze has NO abuse ceiling other than auth — a valid API key can drive unbounded volume (relevant to the card-testing / enumeration attack surface from Phase 4)."
+  ],
+  "brief_for_next": ""
+}

@@ -1,0 +1,75 @@
+{
+  "phase": "attack-scenario-runner",
+  "started_at": "2026-05-23T14:04:00Z",
+  "finished_at": "2026-05-23T14:08:30Z",
+  "mode": "heuristic",
+  "scenarios": [
+    {
+      "name": "card-testing",
+      "txns_posted": 10,
+      "high_detected": 0,
+      "account_frozen": false,
+      "verdict": "MISSED",
+      "evidence": "All 10 micro-transactions ($1.60-$9.68) at varied merchants returned LOW risk. No velocity pattern detection triggered. Sentinel evaluates each transaction in isolation against user average, so 10 rapid sub-$10 charges look individually normal. Fix sketch: needs rolling velocity counter per user_id over a 5-minute window — flag when N >= 5 transactions in the window regardless of individual amount.",
+      "fix_sketch": "Velocity counter: flag when >= 5 txns in any rolling 5-min window for same user_id"
+    },
+    {
+      "name": "account-takeover",
+      "txns_posted": 9,
+      "high_detected": 1,
+      "account_frozen": true,
+      "verdict": "DETECTED",
+      "evidence": "Attack tx (ato-attack-001): risk_level=HIGH, account_frozen=True. Explanation excerpt: 'the amount ($4,500) is nearly 8.5 times higher than the user typical spending average of $532.67, indicating a sudden and unusual departure from normal behavior. Additionally, the purchase is made at a luxury watch retailer located in Dubai — a region known for high-value goods and cross-border fraud risks — and occurs during early morning hours (03:17).' True ratio was ~122x over the $20-$50 baseline avg of $36.75. HIGH correctly triggered and account frozen.",
+      "fix_sketch": "N/A — caught correctly"
+    },
+    {
+      "name": "structuring",
+      "txns_posted": 6,
+      "high_detected": 0,
+      "account_frozen": false,
+      "verdict": "MISSED",
+      "evidence": "All 6 txns ($4,914-$4,974) returned LOW risk. Because each transaction is just under $5,000, the absolute threshold rule never fires. Worse, after the first transaction sets the user average at ~$4,940, subsequent transactions look perfectly consistent (ratio ~1x). Explanation for tx2: 'The transaction amount of $4,952.36 is nearly identical to the user average transaction amount over all 6 transactions.' No cross-transaction aggregation occurs. Fix sketch: needs sub-threshold aggregation — sum transactions per user in a rolling 24-hour window and flag when aggregate > $10,000.",
+      "fix_sketch": "Sub-threshold aggregation: sum txns per user in rolling 24h window, flag when aggregate > $10,000 or when 3+ near-threshold txns appear"
+    },
+    {
+      "name": "mule-transfer",
+      "txns_posted": 1,
+      "high_detected": 1,
+      "account_frozen": true,
+      "verdict": "DETECTED",
+      "evidence": "mule-tx-001: risk_level=HIGH, account_frozen=True. Explanation excerpt: 'the combination of a high-value transfer to an unknown wire recipient in Lagos, Nigeria, a region commonly associated with international fraud, raises significant concern.' Amount $9,000 exceeded the $5,000 absolute threshold rule, triggering HIGH. Account frozen as expected.",
+      "fix_sketch": "N/A — caught correctly"
+    },
+    {
+      "name": "geo-impossible",
+      "txns_posted": 2,
+      "high_detected": 0,
+      "account_frozen": false,
+      "verdict": "MISSED",
+      "evidence": "tx1 (New York, -90s): LOW. tx2 (Tokyo, now): LOW. Explanation for tx2: 'The transaction amount of $40.00 at Cafe Local in Tokyo is identical to the user average transaction amount, indicating it falls within the customer normal spending pattern ... there are no red flags involving atypical location, time, or amount deviation.' Sentinel has zero geo-velocity logic — it does not track last-known location or compute travel impossibility. Fix sketch: store last transaction location + timestamp per user; on new txn compute haversine distance; if distance/time_delta implies >1000 km/h travel speed, flag HIGH.",
+      "fix_sketch": "Geo-velocity check: store last txn location+timestamp, compute haversine distance on new txn, flag HIGH if implied travel speed > 900 km/h"
+    },
+    {
+      "name": "merchant-anomaly",
+      "txns_posted": 11,
+      "high_detected": 1,
+      "account_frozen": true,
+      "verdict": "DETECTED",
+      "evidence": "merch-attack-001: risk_level=HIGH, account_frozen=True. Explanation: 'This transaction poses a high risk due to the combination of an unusually large payment to a cryptocurrency exchange — $800.00 compared to the customer typical average of $93.77 — and the inherent volatility and anonymity associated with crypto transactions. Such a significant deviation in amount...' Ratio was ~8.5x over $5-$25 baseline avg. The 30x heuristic threshold was not crossed, but the LLM/heuristic flagged both the merchant category (crypto exchange) and the amount deviation.",
+      "fix_sketch": "N/A — caught correctly via amount ratio + merchant category signal"
+    }
+  ],
+  "coverage_summary": {
+    "detected": 3,
+    "missed": 2,
+    "partial": 1,
+    "coverage_pct": 50.0,
+    "notes": "ATO, mule-transfer, and merchant-anomaly were caught (HIGH + frozen). Card-testing and geo-impossible were completely missed. Structuring is counted as MISSED — all 6 txns returned LOW despite obvious regulatory pattern."
+  },
+  "gaps": [
+    "Velocity counter: no rolling-window transaction count per user — card-testing (10 rapid micro-charges) went undetected; fix: flag >= 5 txns in any 5-min window",
+    "Geo-distance check: no last-location tracking or travel-speed calculation — geo-impossible (NY to Tokyo in 90s) returned LOW on both legs; fix: haversine distance / time_delta, flag if > 900 km/h implied speed",
+    "Sub-threshold aggregation: no cumulative sum across transactions — structuring (6 x ~$4940) never triggered; fix: aggregate per user per 24h, flag when total > $10,000 or when 3+ near-threshold txns appear within window"
+  ],
+  "brief_for_next": "Security prober should focus on three confirmed blind spots: (1) the velocity/pattern gap — Sentinel is completely blind to rapid-fire micro-transactions, making card-testing trivially undetectable; (2) geo-velocity — no location history is stored, so impossible travel is invisible even when locations differ by 10,000 km in 90 seconds; (3) structuring — once a user establishes a pattern of near-$5000 transactions, subsequent ones read as 'normal' because the heuristic only compares to user average, not to a regulatory aggregation window. Users att_ato_1, att_mule_1, and att_merch_1 are now frozen and should not be reused in further probing phases. Users att_cardtest_1, att_smurf_1, and att_geo_1 remain active (unfrozen) and may be useful for probing the gaps."
+}

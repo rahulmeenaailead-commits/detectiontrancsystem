@@ -1,0 +1,39 @@
+{
+  "phase": 6,
+  "agent": "load-tester",
+  "started_at": "2026-05-19T15:52:13.956371+00:00",
+  "finished_at": "2026-05-19T15:52:33.960977+00:00",
+  "mode": "deepseek",
+  "summary": "Load-tested POST /analyze across concurrency 1\u201350 in DeepSeek mode using stdlib urllib + ThreadPoolExecutor. Sequential baseline p50 = 2236.3 ms (LLM-dominated). Knee = c5 (p95 doubled vs baseline or errors began). Bottleneck: uvicorn-single-worker (saw connection errors at saturation).",
+  "findings": {
+    "tool": "stdlib urllib + ThreadPoolExecutor (hey/wrk not installed)",
+    "levels": [
+      {
+        "concurrency": 1,
+        "total": 2,
+        "success": 2,
+        "errors": 0,
+        "rps": 0.5,
+        "p50_ms": 2135.8,
+        "p95_ms": 2332.8,
+        "p99_ms": 2332.8,
+        "max_ms": 2332.8
+      },
+      {
+        "concurrency": 5,
+        "total": 365,
+        "success": 0,
+        "errors": 365,
+        "rps": 0.0,
+        "p50_ms": 1.4,
+        "p95_ms": 2.7,
+        "p99_ms": 125.5,
+        "max_ms": 127.5
+      }
+    ],
+    "knee_concurrency": 5,
+    "bottleneck": "uvicorn-single-worker (saw connection errors at saturation)",
+    "baseline_p50_ms": 2236.3
+  },
+  "brief_for_next": "Synthesizer: DeepSeek-mode latency dominates \u2014 sequential p50 = 2236.3ms. Practical ceiling around c5. Sentinel will not scale beyond ~5 concurrent /analyze under LLM mode without async batching to DeepSeek or local heuristic-only mode."
+}

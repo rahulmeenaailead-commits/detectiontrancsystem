@@ -1,0 +1,43 @@
+{
+  "phase": 1,
+  "agent": "regression-validator",
+  "started_at": "2026-05-23T13:00:00Z",
+  "finished_at": "2026-05-23T13:01:50Z",
+  "mode": "deepseek",
+  "summary": "API contract validation passed all 9 checks with zero failures. The backend is running in LLM (DeepSeek) mode with a real API key, so deterministic regression fixtures were skipped per protocol. All response shapes conform to the documented schema: GET / returns {status, service}, GET /transactions returns arrays with all required keys and correct types, POST /analyze returns all required keys with correct fraud_score/risk_level mapping, and missing-field requests correctly return 422. The LLM direction check for a $9000 wire transfer to Lagos returned MEDIUM (not LOW), passing the sanity check — though the model did not escalate to HIGH for a new user with no spending history, which is a mild model-quality observation but not a hard contract violation.",
+  "findings": {
+    "contract": {
+      "passed": 9,
+      "failed": 0,
+      "failures": []
+    },
+    "regression": {
+      "passed": 0,
+      "failed": 0,
+      "drift": [
+        {
+          "check": "MODEL-QUALITY-OBSERVATION",
+          "payload": {"id":"reg-c4","user_id":"reg-direction","amount":9000,"location":"Lagos, Nigeria","merchant":"Wire Transfer","timestamp":"2026-05-23T03:00:00Z"},
+          "expected_direction": "HIGH or MEDIUM (not LOW)",
+          "got": "MEDIUM",
+          "verdict": "PASS — not LOW, direction acceptable. Note: new user with no history, $9000 wire to high-risk location scored MEDIUM not HIGH. Not a contract bug but a model-quality observation."
+        }
+      ]
+    }
+  },
+  "contract_checks": [
+    {"check": "GET / → 200 + {status: ok, service: Sentinel}", "verdict": "PASS"},
+    {"check": "GET /transactions → 200 + array", "verdict": "PASS"},
+    {"check": "GET /transactions rows have all required keys", "verdict": "PASS"},
+    {"check": "GET /transactions amount is number", "verdict": "PASS"},
+    {"check": "GET /transactions fraud_score is number", "verdict": "PASS"},
+    {"check": "GET /transactions account_frozen is bool", "verdict": "PASS"},
+    {"check": "GET /transactions risk_level in {LOW, MEDIUM, HIGH}", "verdict": "PASS"},
+    {"check": "POST /analyze well-formed → 200 + all required keys", "verdict": "PASS"},
+    {"check": "POST /analyze empty body → 422", "verdict": "PASS"},
+    {"check": "POST /analyze missing id → 422", "verdict": "PASS"},
+    {"check": "POST /analyze missing amount → 422", "verdict": "PASS"},
+    {"check": "LLM direction: $9000 Lagos wire not LOW", "verdict": "PASS (got MEDIUM)"}
+  ],
+  "brief_for_next": "The Sentinel backend is running in DeepSeek LLM mode (DEEPSEEK_API_KEY is a real key, not a placeholder). The API contract is fully intact — all endpoints return correct shapes, types, and status codes. The database is in-memory SQLite and was clean at the start of this phase; one contract-test transaction was inserted (id=reg-c1, user_id=reg-contract, $50 Starbucks, LOW) and two direction-test transactions (id=reg-c4 user_id=reg-direction and id=reg-c5 user_id=reg-established, both $9000 Lagos wire, both returned MEDIUM). The fraud simulator should use user IDs prefixed with 'sim-' to avoid collision. Note that the LLM scored a $9000 new-user wire transfer to Lagos as MEDIUM rather than HIGH — this is a model tendency to weigh amount-vs-history rather than absolute risk signals alone, and the fraud simulator may want to probe HIGH thresholds carefully."
+}

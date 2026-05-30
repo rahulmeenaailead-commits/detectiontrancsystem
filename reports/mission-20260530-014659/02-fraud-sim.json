@@ -1,0 +1,95 @@
+{
+  "phase": 2,
+  "agent": "fraud-simulator",
+  "started_at": "2026-05-30T01:53:00+00:00",
+  "finished_at": "2026-05-30T01:56:00+00:00",
+  "mode": "heuristic",
+  "summary": "Sent 50 transactions across users u1-u5 in three phases: 25 baseline LOW (coffee/grocery/transit), 10 additional LOW, and 10 intended MEDIUM followed by 5 HIGH-risk transactions. All 5 HIGH transactions were correctly flagged and froze accounts (all unfrozen post-run). Only 3 of 10 intended MEDIUM transactions were actually classified MEDIUM by the heuristic; the other 7 came back LOW. Root cause: each submitted transaction inflates the rolling average for subsequent ones. By the time medium-batch transactions were submitted, user averages had grown substantially (u1: $19 -> $39-$50, u3: $23 -> $59-$95, u4: $22 -> $45-$57, u5: $21 -> $52-$81), pushing the 5x MEDIUM threshold far above the intended medium amounts. The HIGH batch (all >= $5000) worked flawlessly: 5/5 detected and frozen. Explanations are templated (heuristic mode confirmed — patterns like 'Amount $X is within normal range (user avg $Y)' and '...is Nx the user's recent average ($Z)' are deterministic strings, not LLM-generated).",
+  "findings": {
+    "sent": 50,
+    "intended_mix": { "low": 35, "medium": 10, "high": 5 },
+    "classified": { "low": 42, "medium": 3, "high": 5 },
+    "frozen_users": ["u1", "u2", "u3", "u4", "u5"],
+    "user_ids": ["u1", "u2", "u3", "u4", "u5"],
+    "surprises": [
+      {
+        "id": "tx-sim-1780085997-36",
+        "intended": "MEDIUM",
+        "got": "LOW",
+        "amount": 180.0,
+        "user_id": "u1",
+        "merchant": "Best Buy",
+        "explanation": "Amount $180.00 is within normal range (user avg $39.47). Ratio=4.56, below 5x MEDIUM threshold because avg inflated by prior baseline txns."
+      },
+      {
+        "id": "tx-sim-1780085997-39",
+        "intended": "MEDIUM",
+        "got": "LOW",
+        "amount": 195.0,
+        "user_id": "u4",
+        "merchant": "Best Buy",
+        "explanation": "Amount $195.00 is within normal range (user avg $45.06). Ratio=4.33, avg diluted by earlier low-value transactions."
+      },
+      {
+        "id": "tx-sim-1780085997-41",
+        "intended": "MEDIUM",
+        "got": "LOW",
+        "amount": 140.0,
+        "user_id": "u1",
+        "merchant": "Nordstrom",
+        "explanation": "Amount $140.00 is within normal range (user avg $50.64). Ratio=2.77, avg rose steeply due to first MEDIUM txn ($180) included in avg pool."
+      },
+      {
+        "id": "tx-sim-1780085997-42",
+        "intended": "MEDIUM",
+        "got": "LOW",
+        "amount": 220.0,
+        "user_id": "u2",
+        "merchant": "REI",
+        "explanation": "Amount $220.00 is within normal range (user avg $63.56). Prior MEDIUM ($250 Apple Store) diluted ratio to 3.46."
+      },
+      {
+        "id": "tx-sim-1780085997-43",
+        "intended": "MEDIUM",
+        "got": "LOW",
+        "amount": 380.0,
+        "user_id": "u3",
+        "merchant": "Home Depot",
+        "explanation": "Amount $380.00 is within normal range (user avg $95.08). Prior MEDIUM ($320 Delta) diluted ratio to 4.00."
+      },
+      {
+        "id": "tx-sim-1780085997-44",
+        "intended": "MEDIUM",
+        "got": "LOW",
+        "amount": 160.0,
+        "user_id": "u4",
+        "merchant": "Costco",
+        "explanation": "Amount $160.00 is within normal range (user avg $57.83). Ratio=2.77."
+      },
+      {
+        "id": "tx-sim-1780085997-45",
+        "intended": "MEDIUM",
+        "got": "LOW",
+        "amount": 310.0,
+        "user_id": "u5",
+        "merchant": "Samsung Store",
+        "explanation": "Amount $310.00 is within normal range (user avg $81.03). Ratio=3.83, prior MEDIUM ($275 United) diluted subsequent average."
+      }
+    ],
+    "baseline_averages_at_medium_batch": {
+      "u1": 39.47,
+      "u2": 44.0,
+      "u3": 59.47,
+      "u4": 45.06,
+      "u5": 52.41
+    },
+    "high_transactions": [
+      {"id": "tx-sim-1780085997-46", "user_id": "u1", "amount": 7500, "merchant": "Unknown Wire Transfer", "location": "Lagos, Nigeria", "got": "HIGH"},
+      {"id": "tx-sim-1780085997-47", "user_id": "u2", "amount": 12000, "merchant": "Crypto Exchange XYZ", "location": "Pyongyang, North Korea", "got": "HIGH"},
+      {"id": "tx-sim-1780085997-48", "user_id": "u3", "amount": 8900, "merchant": "Offshore Wire Transfer", "location": "Accra, Ghana", "got": "HIGH"},
+      {"id": "tx-sim-1780085997-49", "user_id": "u4", "amount": 6500, "merchant": "Bitcoin ATM", "location": "Moscow, Russia", "got": "HIGH"},
+      {"id": "tx-sim-1780085997-50", "user_id": "u5", "amount": 15000, "merchant": "Luxury Goods International", "location": "Dubai, UAE", "got": "HIGH"}
+    ]
+  },
+  "brief_for_next": "Users u1-u5 all exist in the database and have been unfrozen. Each user has 10 low-value transactions establishing their baseline, plus 2 medium-range transactions, and 1 HIGH transaction that triggered freeze (then unfrozen). Approximate rolling averages after the simulation run (before HIGH): u1 ~$50, u2 ~$64, u3 ~$95, u4 ~$58, u5 ~$81. The database is in-memory SQLite; all transactions persist until process restart. Key behavioral facts for edge-case-hunter: (1) rolling average includes ALL prior transactions for the user, including the one just submitted — each new txn immediately inflates avg for next; (2) MEDIUM threshold is amount >= 5x user_avg; HIGH threshold is amount >= $5000 OR amount >= 30x user_avg; (3) velocity check: 5+ txns from same user in 5-minute window triggers HIGH regardless of amount; (4) frozen accounts return HTTP 423 — transactions are rejected; (5) authentication requires X-API-Key: sentinel-dev-key header; (6) the /unfreeze/{user_id} endpoint exists but is not documented in contract. Edge cases worth exploring: exact boundary at $4999.99 vs $5000.00, ratio exactly at 5.0x and 30.0x, empty merchant/location fields, very long strings, negative amounts, future timestamps, zero amounts, and what happens when user_avg is $0 (first transaction)."
+}

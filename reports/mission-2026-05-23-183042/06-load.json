@@ -1,0 +1,34 @@
+{
+  "phase": "load-tester",
+  "started_at": "2026-05-23T19:45:24.033470+00:00",
+  "finished_at": "2026-05-23T19:46:08.063507+00:00",
+  "mode": "heuristic",
+  "tool": "asyncio-httpx",
+  "baseline_p50_ms": 2323.14,
+  "ramp": [
+    {
+      "concurrency": 1,
+      "requests": 4,
+      "p50_ms": 4557.74,
+      "p95_ms": 4582.31,
+      "p99_ms": 4582.31,
+      "error_rate": 0.0,
+      "throughput_rps": 0.27
+    },
+    {
+      "concurrency": 2,
+      "requests": 33282,
+      "p50_ms": 0.85,
+      "p95_ms": 1.0,
+      "p99_ms": 1.35,
+      "error_rate": 1.0,
+      "throughput_rps": 2218.8,
+      "note": "100% errors at sub-millisecond latency = connection refused (server crashed). ~33k instant rejections in 15s."
+    }
+  ],
+  "knee_point": 2,
+  "saturation_behavior": "crash",
+  "post_test_health": "backend down — curl exit 7 (Connection refused) after c=2 level",
+  "notes": "Heuristic mock mode (no DeepSeek key). Tool: asyncio-httpx, 15s per level. At c=1: only 4 requests completed in 15s (avg ~4.5s each) — already extremely slow, suggesting the backend was under strain from earlier test phases. At c=2: the server crashed immediately — all 33282 sub-millisecond 'responses' were instant connection-refused failures, not real completions. Baseline p50 of 2323ms at c=1 (sequential) confirms even single-request latency was elevated well above the expected sub-50ms heuristic range. The prior security-prober finding of crash at ~20 concurrent was optimistic — this run shows the server cannot sustain even c=2 after being exercised by earlier phases. Backend was confirmed down (connection refused) after the test.",
+  "brief_for_next": "Load test confirmed catastrophic instability: Sentinel crashed at c=2 concurrent requests, validating and worsening the security-prober's estimate of crash at ~20 concurrent. At c=1, single-request latency had already degraded to 4500ms (from a fresh-state baseline of ~2300ms), indicating state accumulation from prior test phases. The backend was unreachable (connection refused) after the load test concluded. Root cause is the single-threaded uvicorn worker combined with in-memory SQLite write contention — there is zero concurrency headroom. Sentinel cannot handle any meaningful concurrent load in its current architecture; production deployment would require multiple uvicorn workers, a persistent database with connection pooling, and async-safe agent calls."
+}
