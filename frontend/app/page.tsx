@@ -53,7 +53,7 @@ function StatCard({
 }
 
 export default function Dashboard() {
-  const { transactions, newIds, simulate, stats } = useTransactions();
+  const { transactions, newIds, simulate, stats, error } = useTransactions();
   const [openTxnId, setOpenTxnId] = useState<string | null>(null);
 
   return (
@@ -70,6 +70,12 @@ export default function Dashboard() {
           Simulate Suspicious Transaction
         </button>
       </header>
+
+      {error && (
+        <div className="mb-4 rounded-md border border-yellow-300 bg-yellow-50 px-4 py-2 text-sm text-yellow-800">
+          {error}
+        </div>
+      )}
 
       <section className="grid grid-cols-3 gap-4 mb-6">
         <StatCard label="Scanned" value={stats.total} />

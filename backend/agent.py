@@ -100,8 +100,8 @@ def _build_prompt(
     )
 
 
-def _parse_response(text: str) -> tuple[str, str]:
-    risk = "MEDIUM"
+def _parse_response(text: str) -> tuple[str | None, str]:
+    risk: str | None = None
     explanation = text.strip()
     for line in text.splitlines():
         upper = line.upper()
@@ -188,7 +188,9 @@ def _check_geo_velocity(transaction: Transaction) -> tuple[str, str | None]:
 def _check_structuring(transaction: Transaction) -> tuple[str, str | None]:
     now = _parse_ts(transaction.timestamp) or datetime.now(timezone.utc)
     since = (now - timedelta(minutes=STRUCTURING_WINDOW_MIN)).isoformat()
-    rolling_sum = sum_recent_transactions(transaction.user_id, since) + transaction.amount
+    # The current txn is inserted by /analyze before this rule runs, so it's
+    # already in the sum — adding amount again would double-count.
+    rolling_sum = sum_recent_transactions(transaction.user_id, since)
     if (
         rolling_sum >= STRUCTURING_SUM_THRESHOLD
         and transaction.amount < HARD_AMOUNT_THRESHOLD
@@ -296,10 +298,18 @@ def analyze_transaction(transaction: Transaction) -> dict:
             )
             text = response.choices[0].message.content or ""
             llm_risk, llm_explanation = _parse_response(text)
-            risk = _max_risk(llm_risk, rule_risk)
-            explanation = llm_explanation
-            if rule_notes:
-                explanation = explanation + " Rule signals: " + " ".join(rule_notes)
+            if llm_risk is None:
+                # Unparseable LLM output: fall back to the deterministic rule
+                # layer rather than silently defaulting to MEDIUM.
+                risk = rule_risk
+                explanation = floor_reason
+                if rule_notes:
+                    explanation = explanation + " " + " ".join(rule_notes)
+            else:
+                risk = _max_risk(llm_risk, rule_risk)
+                explanation = llm_explanation
+                if rule_notes:
+                    explanation = explanation + " Rule signals: " + " ".join(rule_notes)
         except Exception as e:
             risk = rule_risk
             explanation = f"[fallback after API error: {e}] {floor_reason}"

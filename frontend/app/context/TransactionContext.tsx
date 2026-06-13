@@ -16,6 +16,7 @@ const API_KEY = process.env.NEXT_PUBLIC_SENTINEL_API_KEY || "sentinel-dev-key";
 const api = axios.create({
   baseURL: API,
   headers: { "X-API-Key": API_KEY },
+  timeout: 2500,
 });
 
 export type Transaction = {
@@ -41,15 +42,16 @@ type Ctx = {
   refresh: () => Promise<void>;
   simulate: () => Promise<void>;
   stats: { total: number; high: number; frozen: number };
+  error: string | null;
 };
 
 const TransactionContext = createContext<Ctx | null>(null);
 
 const SUSPICIOUS_LOCATIONS = [
-  "Lagos, Nigeria",
-  "Pyongyang, DPRK",
-  "Tehran, Iran",
-  "Caracas, Venezuela",
+  "Port City A",
+  "Coastal Hub B",
+  "Trade Zone C",
+  "Anonymous Region D",
 ];
 const SUSPICIOUS_MERCHANTS = [
   "Unknown Wire Transfer",
@@ -81,6 +83,7 @@ function randomSuspicious() {
 export function TransactionProvider({ children }: { children: React.ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [newIds, setNewIds] = useState<Set<string>>(new Set());
+  const [error, setError] = useState<string | null>(null);
   const knownIds = useRef<Set<string>>(new Set());
 
   const refresh = useCallback(async () => {
@@ -94,8 +97,14 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
       }
       data.forEach((t) => knownIds.current.add(t.id));
       setTransactions(data);
-    } catch {
-      /* backend may not be up yet */
+      setError(null);
+    } catch (e: unknown) {
+      const status = axios.isAxiosError(e) ? e.response?.status : undefined;
+      if (status === 401 || status === 403) {
+        setError("Auth failed — check NEXT_PUBLIC_SENTINEL_API_KEY.");
+      } else {
+        setError("Backend unreachable — retrying…");
+      }
     }
   }, []);
 
@@ -127,7 +136,7 @@ export function TransactionProvider({ children }: { children: React.ReactNode })
 
   return (
     <TransactionContext.Provider
-      value={{ transactions, newIds, refresh, simulate, stats }}
+      value={{ transactions, newIds, refresh, simulate, stats, error }}
     >
       {children}
     </TransactionContext.Provider>
